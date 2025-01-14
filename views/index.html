@@ -1,0 +1,43 @@
+<!-- This is a static file -->
+<!-- served from your routes in server.js -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Connor's Family Quizzes Quiztaker Portal</title>
+
+    <!-- import the webpage's stylesheet -->
+    <link rel="stylesheet" href="/style.css" />
+
+    <!-- import the webpage's client-side javascript file -->
+    <script src="/script.js" defer></script>
+    <script
+      type="text/javascript"
+      src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"
+    ></script>
+  </head>
+  <body>
+    <div class="overlay" id="quizListOverlay">
+      <h1>
+        Quiz List
+      </h1>
+      <div id="quizList"></div>
+    </div>
+    <div id="container">
+      <div id="title">
+        <h1 id="currentQuiz">2019 Thanksgiving Quiz</h1>
+      </div>
+      <br />
+      <div id="quiz"></div>
+      <div class="button" id="next"><a href="#">Next</a></div>
+      <div class="button" id="prev"><a href="#">Prev</a></div>
+      <!--<div class='button' id='start'> <a href='#'>Start Over</a></div>-->
+      <!-- <button class='' id='next'>Next</a></button>
+    		<button class='' id='prev'>Prev</a></button>
+    		<button class='' id='start'> Start Over</a></button> -->
+    </div>
+  </body>
+</html>

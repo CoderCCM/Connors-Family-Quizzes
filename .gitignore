@@ -1,0 +1,5 @@
+node_modules/*
+liveStreamDataFiles/[0-9]*.txt
+.cache/*
+.DS_Store
+.env

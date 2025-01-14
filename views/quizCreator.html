@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Connor's Family Quizzes Quiz Creator</title>
+
+    <!-- import the webpage's stylesheet -->
+    <link rel="stylesheet" href="/creatorStyle.css" />
+
+    <!-- import the webpage's client-side javascript file -->
+    <script src="/creatorScript.js" defer></script>
+  </head>
+  <body>
+    <h1 style="width: 100%; text-align: center;" onclick="newQuestion()">
+      Quiz Creator
+    </h1>
+    <div class="row">
+      <div class="column">
+        <label>Quiz Name: <input type="text" id="quizName" /></label
+        ><br /><br />
+        <label
+          >Background Color (hex):
+          <input id="backgroundColor" onkeyup="updateBcColor()" /></label
+        ><br /><br />
+        <label
+          >Background Image (url):
+          <input id="backgroundImage" onkeyup="updateImage()"
+        /></label>
+        <hr />
+        <h3>
+          Questions
+        </h3>
+        <div id="questionsDiv"></div>
+        <button onclick="createQuiz()">
+          CREATE AND PUBLISH QUIZ
+        </button>
+      </div>
+      <div class="column">
+        <h2>
+          Demo:
+        </h2>
+        <img height="400" width="400" id="demo" />
+        <img height="400" width="300" id="bcColorDemo" />
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Connor's Family Quizzes Admin Portal</title>
+
+    <!-- import the webpage's stylesheet -->
+    <link rel="stylesheet" href="/adminStyle.css" />
+
+    <!-- import the webpage's client-side javascript file -->
+    <script src="/adminScript.js" defer></script>
+  </head>
+  <body>
+    <h1>Connor's Family Quizzes</h1>
+    <h3>Quizzes</h3>
+    <br />
+
+    <div id="questionOverviewOverlay" class="overlay">
+      <button
+        onclick="document.getElementById('questionOverviewOverlay').style.display = 'none'"
+      >
+        Back to Quiz Overview
+      </button>
+      <h1 id="quizName2"></h1>
+      <h3 id="quizDate2"></h3>
+      <div id="questionsDiv"></div>
+    </div>
+    <div id="quizOverviewOverlay" class="overlay">
+      <div class="row">
+        <div class="column" id="column1">
+          <h1 id="quizName"></h1>
+          <h3 id="quizDate"></h3>
+          <p id="participantCount"></p>
+          <div id="participants"></div>
+          <button onclick="openQuestionOverview()" id="questionOverviewOpener">
+            Question Overview
+          </button>
+          <br /><br />
+          <button onclick="openLiveScoreboard()" id="questionLiveScoreboard">
+            Live Scoreboard
+          </button>
+        </div>
+        <div class="column" id="column2"></div>
+      </div>
+    </div>
+  </body>
+</html>

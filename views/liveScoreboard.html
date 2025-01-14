@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Connor's Family Quizzes Live Scoreboard</title>
+
+    <!-- import the webpage's stylesheet -->
+    <link rel="stylesheet" href="/scoreboardStyle.css" />
+
+    <!-- import the webpage's client-side javascript file -->
+    <script src="/scoreboardScript.js" defer></script>
+
+    <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+  </head>
+  <body>
+    <h1 id="header" style="margin: 0 auto; display: table;">
+      Connor's Family Quizzes
+    </h1>
+    <br />
+    <div class="row" id="row">
+      <div class="column" id="column1">
+        <h1 id="quizName"></h1>
+        <br />
+        <h2>Scan to Take the Quiz:</h2>
+        <div id="QR" style="margin: 0 auto; display: table;"></div>
+        <br />
+        <h2 id="avgScore"></h2>
+      </div>
+
+      <div class="column" id="column2">
+        <h1 id="participantCount">Connecting...</h1>
+        <div id="participants"></div>
+      </div>
+    </div>
+    <br />
+    <h3 id="updateTime" style="margin: 0 auto; display: table;"></h3>
+  </body>
+</html>
