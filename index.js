@@ -6,6 +6,12 @@
 const express = require("express");
 var bodyParser = require('body-parser')
 const fs = require("fs");
+const fetch = require("node-fetch")
+const { Headers, Response } = require('node-fetch');
+global.fetch = fetch;
+global.Headers = Headers;
+global.Response = Response;
+
 require('dotenv').config();
  
 // create application/json parser
