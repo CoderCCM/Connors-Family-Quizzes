@@ -125,11 +125,11 @@ app.post('/submitChoicesByName', jsonParser, async (request, response) => {
         if (a.indexOf(request.participantName)==-1) {
           a.push(request.body.participantName)
         }
-        set(ref(db, request.body.quizName + " - QuizTakers"), a);
+        set(ref(db, request.body.quizName + " - QuizTakers"), a).then(()=>{
+            response.json({"A": "A"})
+        });
     });
   
-  
-  response.json({"A": "A"})
 
 });
 
