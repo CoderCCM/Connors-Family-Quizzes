@@ -14,15 +14,15 @@ global.Headers = Headers;
 global.Response = Response;
 
 require('dotenv').config();
- 
+
 // create application/json parser
 var jsonParser = bodyParser.json()
 const app = express();
 
 const { initializeApp } = require('firebase/app');
 const { getAuth, signInWithEmailAndPassword } = require('firebase/auth');
-  // Your web app's Firebase configuration
-  var firebaseConfig = {
+// Your web app's Firebase configuration
+var firebaseConfig = {
     apiKey: process.env.apiKey,
     authDomain: process.env.authDomain,
     databaseURL: process.env.databaseURL,
@@ -30,20 +30,20 @@ const { getAuth, signInWithEmailAndPassword } = require('firebase/auth');
     storageBucket: process.env.storageBucket,
     messagingSenderId: process.env.messagingSenderId,
     appId: process.env.appId
-  };
-  // Initialize Firebase
-  const firebaseApp = initializeApp(firebaseConfig);
-  const auth = getAuth(firebaseApp);
-  const { getDatabase, ref, get, set, onValue } = require('firebase/database');
-  const db = getDatabase(firebaseApp);
+};
+// Initialize Firebase
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
+const { getDatabase, ref, get, set, onValue } = require('firebase/database');
+const db = getDatabase(firebaseApp);
 
-  let authPromise = signInWithEmailAndPassword(auth, process.env.authEmail, process.env.authPassword)
-  .then(() => {
-    console.log('✅ Firebase signed in');
-  })
-  .catch((error) => {
-    console.error('❌ Firebase sign-in failed:', error);
-  });
+let authPromise = signInWithEmailAndPassword(auth, process.env.authEmail, process.env.authPassword)
+    .then(() => {
+        console.log('✅ Firebase signed in');
+    })
+    .catch((error) => {
+        console.error('❌ Firebase sign-in failed:', error);
+    });
 
 const path = require('path');
 
@@ -54,19 +54,19 @@ app.use(express.static(path.join(__dirname, "../public")));
 
 // Routes
 router.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "../views/index.html"));
+    res.sendFile(path.join(__dirname, "../views/index.html"));
 });
 
 router.get("/5", (req, res) => {
-  res.sendFile(path.join(__dirname, "../views/quizCreator.html"));
+    res.sendFile(path.join(__dirname, "../views/quizCreator.html"));
 });
 
 router.get("/437143714371", (req, res) => {
-  res.sendFile(path.join(__dirname, "../views/adminPortal.html"));
+    res.sendFile(path.join(__dirname, "../views/adminPortal.html"));
 });
 
 router.get("/scoreboard", (req, res) => {
-  res.sendFile(path.join(__dirname, "../views/liveScoreboard.html"));
+    res.sendFile(path.join(__dirname, "../views/liveScoreboard.html"));
 });
 
 // Use router under /.netlify/functions/api or /api depending on host
@@ -74,84 +74,68 @@ app.use("/", router);
 
 
 app.post('/requestQuizList', jsonParser, async (request, response) => {
-  console.log("New Connection!")
-  await authPromise;
-  get(ref(db, 'quizList')).then((snapshot) => {
+    console.log("New Connection!")
+    await authPromise;
+    var snapshot = await get(ref(db, 'quizList'));
     var c = []
     var c = snapshot.val()
-    response.json({quizList: c})
-  })
+    response.json({ quizList: c })
 })
 
 
 
 app.post('/requestQuestions', jsonParser, async (request, response) => {
-  console.log(request.body)
-  await authPromise;
-    get(ref(db, request.body.quizName + " - Questions")).then((snapshot) => {
-        get(ref(db, request.body.quizName + " - Properties")).then((properties) => {
+    console.log(request.body)
+    await authPromise;
+    var snapshot = await get(ref(db, request.body.quizName + " - Questions"))
+    var properties = await get(ref(db, request.body.quizName + " - Properties"))
     var c = []
     c = snapshot.val()
-        var d = []
-        d = properties.val().split("!@#$%^&*()")
-    response.json({questions: c, backgroundColor: d[0], backgroundImage: d[1]})
-    
-    
-  })
-  })
+    var d = []
+    d = properties.val().split("!@#$%^&*()")
+    response.json({ questions: c, backgroundColor: d[0], backgroundImage: d[1] })
 
 });
 
 
 app.post('/requestChoicesByName', jsonParser, async (request, response) => {
     await authPromise;
-    get(ref(db, request.body.quizName + " - " + request.body.participantName + " - Choices")).then((snapshot) => {
+    var snapshot = await get(ref(db, request.body.quizName + " - " + request.body.participantName + " - Choices"))
     var c = []
     c = snapshot.val()
-    response.json({choices: c})
-    
-    
-  })
+    response.json({ choices: c })
 
 });
 
 app.post('/submitChoicesByName', jsonParser, async (request, response) => {
     await authPromise;
-  set(ref(db, request.body.quizName + " - Questions"), request.body.choices);
-  
-  get(ref(db, request.body.quizName + " - QuizTakers")).then((snapshot) => {
-        var a = []
-        a = snapshot.val()
-        if (a.indexOf(request.participantName)==-1) {
-          a.push(request.body.participantName)
-        }
-        set(ref(db, request.body.quizName + " - QuizTakers"), a).then(()=>{
-            response.json({"A": "A"})
-        });
-    });
-  
+    await set(ref(db, request.body.quizName + " - Questions"), request.body.choices);
+
+    var snapshot = await get(ref(db, request.body.quizName + " - QuizTakers"))
+    var a = []
+    a = snapshot.val()
+    if (a.indexOf(request.participantName) == -1) {
+        a.push(request.body.participantName)
+    }
+    await set(ref(db, request.body.quizName + " - QuizTakers"), a)
+    response.json({ "A": "A" })
 
 });
 
 
 app.post('/requestParticipantListByQuizName', jsonParser, async (request, response) => {
     await authPromise;
-    get(ref(db, request.body.quizName + " - QuizTakers")).then((snapshot) => {
+    var snapshot = await get(ref(db, request.body.quizName + " - QuizTakers"))
     var c = new Array();
     c = snapshot.val()
 
-    var dudIndex = c.indexOf("Q!W@E#R$T%Y^U&I*O(P)");//get  "car" index
-//remove car from the colors array
-c.splice(dudIndex, 1); // colors = ["red","blue","green"]
+    var dudIndex = c.indexOf("Q!W@E#R$T%Y^U&I*O(P)");
+    c.splice(dudIndex, 1);
     console.log(c)
-    response.json({participants: c})
-    
-    
-  })
-
+    response.json({ participants: c })
 });
 
-app.post('/requestParticipantListByQuizNameLive', jsonParser, async (request, response) => {
+/*app.post('/requestParticipantListByQuizNameLive', jsonParser, async (request, response) => {
 
 var fileName = String(Math.floor(Math.random() * 10000000000) + 1) + "QuizTakers.txt";
 await authPromise;
@@ -187,26 +171,18 @@ fs.readFile("liveStreamDataFiles/" + request.body.fn, 'utf8', function (err, dat
   response.json({d: String(data)})
 
 });
-});
+});*/
 
 app.post('/requestIfNameAlreadyExists', jsonParser, async (request, response) => {
     await authPromise;
-  var rc = false;
-  get(ref(db, request.body.quiz + ' - QuizTakers')).then((snapshot) => {
+    var rc = false;
+    var snapshot = await get(ref(db, request.body.quiz + ' - QuizTakers'))
     var c = []
     var c = snapshot.val()
-    
-    
-      
-          if (c.indexOf(request.body.participantName)>-1) {
-            rc = true
-          }
-        
-    
-      response.json({alreadyExists: rc})
-    
-  })
-  
+    if (c.indexOf(request.body.participantName) > -1) {
+        rc = true
+    }
+    response.json({ alreadyExists: rc })
 });
 
 
@@ -216,18 +192,18 @@ app.post('/requestIfNameAlreadyExists', jsonParser, async (request, response) =>
 
 app.post('/createQuiz', jsonParser, async (request, response) => {
     await authPromise;
-   
- set(ref(db, request.body.quizName + " - Properties"), request.body.backgroundColor + "!@#$%^&*()" + request.body.backgroundImage);
- set(ref(db, request.body.quizName + " - Questions"), request.body.questions); 
- set(ref(db, request.body.quizName + " - QuizTakers"), ["Q!W@E#R$T%Y^U&I*O(P)"]); 
-  
-  
- get(ref(db, "quizList")).then((snapshot) => {
+
+    await set(ref(db, request.body.quizName + " - Properties"), request.body.backgroundColor + "!@#$%^&*()" + request.body.backgroundImage);
+    await set(ref(db, request.body.quizName + " - Questions"), request.body.questions);
+    await set(ref(db, request.body.quizName + " - QuizTakers"), ["Q!W@E#R$T%Y^U&I*O(P)"]);
+
+
+    await get(ref(db, "quizList")).then(async (snapshot) => {
         var a = []
         a = snapshot.val()
         a.push(request.body.quizName)
 
-        set(ref(db, "quizList"), a); 
+        await set(ref(db, "quizList"), a);
     });
 });
 
