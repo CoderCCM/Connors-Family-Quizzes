@@ -47,12 +47,12 @@ const { getAuth, signInWithEmailAndPassword } = require('firebase/auth');
 
   const path = require('path');
 
-app.use(express.static(path.join(process.cwd(), 'public')));
+// ✅ Serve static files from 'public'
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
-
 
 app.get("/5", (request, response) => {
   response.sendFile(__dirname + "/views/quizCreator.html");
