@@ -46,30 +46,28 @@ const { getAuth, signInWithEmailAndPassword } = require('firebase/auth');
 
 
   const path = require('path');
-/*
+
 // make all the files in 'public' available
 // https://expressjs.com/en/starter/static-files.html
-app.use(express.static(path.join(__dirname, '..', 'views')));
+app.use(express.static('public'));
 
 
 app.get("/5", (request, response) => {
-  response.sendFile("../views/quizCreator.html");
+  response.sendFile("views/quizCreator.html");
 });
 
 app.get("/437143714371", (request, response) => {
-  response.sendFile("../views/adminPortal.html");
+  response.sendFile("views/adminPortal.html");
 });
 
 app.get("/scoreboard", (request, response) => {
-  response.sendFile("../views/liveScoreboard.html");
+  response.sendFile("views/liveScoreboard.html");
 });
 
 // https://expressjs.com/en/starter/basic-routing.html
 app.get("/", (request, response) => {
-    res.sendFile(path.join(__dirname, '..', 'views', 'index.html'));
+    response.sendFile("views/index.html");
 });
-*/
-app.get("/", (req, res) => res.send("Express on Vercel"));
 
 // listen for requests :)
 const listener = app.listen(process.env.PORT, () => {
