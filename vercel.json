@@ -7,8 +7,18 @@
       }
     ],
     "routes": [
-      { "src": "/(.*\\.(js|css|png|jpg|svg|ico|woff|woff2))", "dest": "/public/$1" },
-      { "src": "/(5|437143714371|scoreboard)", "dest": "/api/index.js" },
-      { "src": "/", "dest": "/api/index.js" }
+      {
+        "src": "/(.*\\.(js|css|png|jpg|svg|ico|woff|woff2))",
+        "dest": "/public/$1"
+      },
+      {
+        "src": "/(5|437143714371|scoreboard)",
+        "dest": "/api/index.js"
+      },
+      {
+        "src": "/",
+        "dest": "/api/index.js"
+      }
     ]
   }
+  
