@@ -45,11 +45,11 @@ const { getAuth, signInWithEmailAndPassword } = require('firebase/auth');
   });
 
 
-
+  const path = require('path');
 
 // make all the files in 'public' available
 // https://expressjs.com/en/starter/static-files.html
-app.use(express.static("../public"));
+app.use(express.static(path.join(__dirname, '..', 'views')));
 
 
 app.get("/5", (request, response) => {
@@ -66,7 +66,7 @@ app.get("/scoreboard", (request, response) => {
 
 // https://expressjs.com/en/starter/basic-routing.html
 app.get("/", (request, response) => {
-  response.sendFile("../views/index.html");
+    res.sendFile(path.join(__dirname, '..', 'views', 'index.html'));
 });
 
 
