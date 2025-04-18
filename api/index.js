@@ -45,7 +45,7 @@ const { getAuth, signInWithEmailAndPassword } = require('firebase/auth');
   });
 
 
-
+  const path = require('path');
 
 app.use(express.static(path.join(process.cwd(), 'public')));
 
