@@ -45,27 +45,29 @@ const { getAuth, signInWithEmailAndPassword } = require('firebase/auth');
   });
 
 
-  const path = require('path');
 
-// ✅ Serve static files from 'public'
-app.use(express.static(path.join(__dirname, '..', 'public')));
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
-});
+// make all the files in 'public' available
+// https://expressjs.com/en/starter/static-files.html
+app.use(express.static("../public"));
+
 
 app.get("/5", (request, response) => {
-  response.sendFile(__dirname + "/views/quizCreator.html");
+  response.sendFile("../views/quizCreator.html");
 });
 
 app.get("/437143714371", (request, response) => {
-  response.sendFile(__dirname + "/views/adminPortal.html");
+  response.sendFile("../views/adminPortal.html");
 });
 
 app.get("/scoreboard", (request, response) => {
-  response.sendFile(__dirname + "/views/liveScoreboard.html");
+  response.sendFile("../views/liveScoreboard.html");
 });
 
+// https://expressjs.com/en/starter/basic-routing.html
+app.get("/", (request, response) => {
+  response.sendFile("../views/index.html");
+});
 
 
 // listen for requests :)
