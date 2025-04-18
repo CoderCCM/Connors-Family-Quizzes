@@ -46,6 +46,8 @@ const { getAuth, signInWithEmailAndPassword } = require('firebase/auth');
 
 const path = require('path');
 
+const router = express.Router();
+
 // Serve static files from /public
 app.use(express.static(path.join(__dirname, "../public")));
 
