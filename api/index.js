@@ -46,7 +46,7 @@ const { getAuth, signInWithEmailAndPassword } = require('firebase/auth');
 
 
   const path = require('path');
-
+/*
 // make all the files in 'public' available
 // https://expressjs.com/en/starter/static-files.html
 app.use(express.static(path.join(__dirname, '..', 'views')));
@@ -68,7 +68,8 @@ app.get("/scoreboard", (request, response) => {
 app.get("/", (request, response) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'index.html'));
 });
-
+*/
+app.get("/", (req, res) => res.send("Express on Vercel"));
 
 // listen for requests :)
 const listener = app.listen(process.env.PORT, () => {
