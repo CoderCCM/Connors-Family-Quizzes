@@ -56,13 +56,6 @@ router.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../views/index.html"));
 });
 
-router.get("/script.js", (req, res) => {
-    res.sendFile(path.join(__dirname, "../public/script.js"));
-  });
-  router.get("/style.css", (req, res) => {
-    res.sendFile(path.join(__dirname, "../public/style.css"));
-  });
-
 router.get("/5", (req, res) => {
   res.sendFile(path.join(__dirname, "../views/quizCreator.html"));
 });
