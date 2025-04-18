@@ -109,7 +109,7 @@ app.post('/requestChoicesByName', jsonParser, async (request, response) => {
 
 app.post('/submitChoicesByName', jsonParser, async (request, response) => {
     await authPromise;
-    await set(ref(db, request.body.quizName + " - Questions"), request.body.choices);
+    await set(ref(db, request.body.quizName + " - " + request.body.participantName + " - Choices"), request.body.choices);
 
     var snapshot = await get(ref(db, request.body.quizName + " - QuizTakers"))
     var a = []
