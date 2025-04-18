@@ -71,11 +71,6 @@ router.get("/scoreboard", (req, res) => {
 // Use router under /.netlify/functions/api or /api depending on host
 app.use("/", router);
 
-// listen for requests :)
-const listener = app.listen(process.env.PORT, () => {
-  console.log("Your app is listening on port " + listener.address().port);
-});
-
 
 app.post('/requestQuizList', jsonParser, (request, response) => {
   console.log("New Connection!")
