@@ -233,4 +233,4 @@ app.post('/createQuiz', jsonParser, (request, response) => {
 });
 
 
-module.exports.handler = serverless(app);
+module.exports = serverless(app);
