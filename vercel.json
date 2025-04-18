@@ -8,6 +8,10 @@
     ],
     "routes": [
       {
+        "src": "/(5|437143714371|scoreboard|.*\\.(js|css|png|jpg|svg|ico|woff|woff2))",
+        "dest": "/api/index.js"
+      },
+      {
         "src": "/",
         "dest": "/api/index.js"
       }
