@@ -47,9 +47,11 @@ const { getAuth, signInWithEmailAndPassword } = require('firebase/auth');
 
 
 
-// make all the files in 'public' available
-// https://expressjs.com/en/starter/static-files.html
-app.use(express.static("public"));
+app.use(express.static(path.join(process.cwd(), 'public')));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
+});
 
 
 app.get("/5", (request, response) => {
@@ -64,10 +66,6 @@ app.get("/scoreboard", (request, response) => {
   response.sendFile(__dirname + "/views/liveScoreboard.html");
 });
 
-// https://expressjs.com/en/starter/basic-routing.html
-app.get("/", (request, response) => {
-  response.sendFile(__dirname + "/views/index.html");
-});
 
 
 // listen for requests :)
