@@ -8,6 +8,7 @@ var bodyParser = require('body-parser')
 const fs = require("fs");
 const fetch = require("node-fetch")
 const { Headers, Response } = require('node-fetch');
+const serverless = require('serverless-http');
 global.fetch = fetch;
 global.Headers = Headers;
 global.Response = Response;
@@ -230,3 +231,6 @@ app.post('/createQuiz', jsonParser, (request, response) => {
         set(ref(db, "quizList"), a); 
     });
 });
+
+
+module.exports.handler = serverless(app);
