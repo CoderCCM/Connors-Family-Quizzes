@@ -37,11 +37,12 @@ const { getAuth, signInWithEmailAndPassword } = require('firebase/auth');
   const { getDatabase, ref, get, set, onValue } = require('firebase/database');
   const db = getDatabase(firebaseApp);
 
-  signInWithEmailAndPassword(auth, process.env.authEmail, process.env.authPassword)
-  .then((userCredential) => console.log('Signed in'))
+  let authPromise = signInWithEmailAndPassword(auth, process.env.authEmail, process.env.authPassword)
+  .then(() => {
+    console.log('✅ Firebase signed in');
+  })
   .catch((error) => {
-    console.error('Error code:', error.code);
-    console.error('Error message:', error.message);
+    console.error('❌ Firebase sign-in failed:', error);
   });
 
 const path = require('path');
@@ -72,8 +73,9 @@ router.get("/scoreboard", (req, res) => {
 app.use("/", router);
 
 
-app.post('/requestQuizList', jsonParser, (request, response) => {
+app.post('/requestQuizList', jsonParser, async (request, response) => {
   console.log("New Connection!")
+  await authPromise;
   get(ref(db, 'quizList')).then((snapshot) => {
     var c = []
     var c = snapshot.val()
@@ -83,8 +85,9 @@ app.post('/requestQuizList', jsonParser, (request, response) => {
 
 
 
-app.post('/requestQuestions', jsonParser, (request, response) => {
+app.post('/requestQuestions', jsonParser, async (request, response) => {
   console.log(request.body)
+  await authPromise;
     get(ref(db, request.body.quizName + " - Questions")).then((snapshot) => {
         get(ref(db, request.body.quizName + " - Properties")).then((properties) => {
     var c = []
@@ -100,8 +103,8 @@ app.post('/requestQuestions', jsonParser, (request, response) => {
 });
 
 
-app.post('/requestChoicesByName', jsonParser, (request, response) => {
-  
+app.post('/requestChoicesByName', jsonParser, async (request, response) => {
+    await authPromise;
     get(ref(db, request.body.quizName + " - " + request.body.participantName + " - Choices")).then((snapshot) => {
     var c = []
     c = snapshot.val()
@@ -112,8 +115,8 @@ app.post('/requestChoicesByName', jsonParser, (request, response) => {
 
 });
 
-app.post('/submitChoicesByName', jsonParser, (request, response) => {
-  
+app.post('/submitChoicesByName', jsonParser, async (request, response) => {
+    await authPromise;
   set(ref(db, request.body.quizName + " - Questions"), request.body.choices);
   
   get(ref(db, request.body.quizName + " - QuizTakers")).then((snapshot) => {
@@ -131,8 +134,8 @@ app.post('/submitChoicesByName', jsonParser, (request, response) => {
 });
 
 
-app.post('/requestParticipantListByQuizName', jsonParser, (request, response) => {
-  
+app.post('/requestParticipantListByQuizName', jsonParser, async (request, response) => {
+    await authPromise;
     get(ref(db, request.body.quizName + " - QuizTakers")).then((snapshot) => {
     var c = new Array();
     c = snapshot.val()
@@ -151,7 +154,7 @@ c.splice(dudIndex, 1); // colors = ["red","blue","green"]
 app.post('/requestParticipantListByQuizNameLive', jsonParser, async (request, response) => {
 
 var fileName = String(Math.floor(Math.random() * 10000000000) + 1) + "QuizTakers.txt";
-  
+await authPromise;
     onValue(ref(db, request.body.quizName + " - QuizTakers"), (snapshot) => {
     console.log("DATA CHANGE!");
     var c = new Array();
@@ -186,8 +189,8 @@ fs.readFile("liveStreamDataFiles/" + request.body.fn, 'utf8', function (err, dat
 });
 });
 
-app.post('/requestIfNameAlreadyExists', jsonParser, (request, response) => {
-  
+app.post('/requestIfNameAlreadyExists', jsonParser, async (request, response) => {
+    await authPromise;
   var rc = false;
   get(ref(db, request.body.quiz + ' - QuizTakers')).then((snapshot) => {
     var c = []
@@ -211,8 +214,8 @@ app.post('/requestIfNameAlreadyExists', jsonParser, (request, response) => {
 
 
 
-app.post('/createQuiz', jsonParser, (request, response) => {
-  
+app.post('/createQuiz', jsonParser, async (request, response) => {
+    await authPromise;
    
  set(ref(db, request.body.quizName + " - Properties"), request.body.backgroundColor + "!@#$%^&*()" + request.body.backgroundImage);
  set(ref(db, request.body.quizName + " - Questions"), request.body.questions); 
