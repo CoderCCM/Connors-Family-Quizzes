@@ -44,30 +44,30 @@ const { getAuth, signInWithEmailAndPassword } = require('firebase/auth');
     console.error('Error message:', error.message);
   });
 
+const path = require('path');
 
-  const path = require('path');
+// Serve static files from /public
+app.use(express.static(path.join(__dirname, "../public")));
 
-// make all the files in 'public' available
-// https://expressjs.com/en/starter/static-files.html
-app.use(express.static('public'));
-
-
-app.get("/5", (request, response) => {
-  response.sendFile("views/quizCreator.html");
+// Routes
+router.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../views/index.html"));
 });
 
-app.get("/437143714371", (request, response) => {
-  response.sendFile("views/adminPortal.html");
+router.get("/5", (req, res) => {
+  res.sendFile(path.join(__dirname, "../views/quizCreator.html"));
 });
 
-app.get("/scoreboard", (request, response) => {
-  response.sendFile("views/liveScoreboard.html");
+router.get("/437143714371", (req, res) => {
+  res.sendFile(path.join(__dirname, "../views/adminPortal.html"));
 });
 
-// https://expressjs.com/en/starter/basic-routing.html
-app.get("/", (request, response) => {
-    response.sendFile("views/index.html");
+router.get("/scoreboard", (req, res) => {
+  res.sendFile(path.join(__dirname, "../views/liveScoreboard.html"));
 });
+
+// Use router under /.netlify/functions/api or /api depending on host
+app.use("/", router);
 
 // listen for requests :)
 const listener = app.listen(process.env.PORT, () => {
@@ -232,4 +232,5 @@ app.post('/createQuiz', jsonParser, (request, response) => {
 });
 
 
-module.exports = serverless(app);
+module.exports = app;
+module.exports.handler = serverless(app);
