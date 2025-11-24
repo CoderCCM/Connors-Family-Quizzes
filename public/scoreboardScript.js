@@ -139,7 +139,7 @@ async function repaint() {
 
     // Calculate correct answers
     for (let q = 0; q < selections.length; q++) {
-      if (selections[q] === quizzes[quizNameGlobal].questions[q].correctAnswer) {
+      if (selections[q] == quizzes[quizNameGlobal].questions[q].correctAnswer) {
         numRight++;
       }
     }
