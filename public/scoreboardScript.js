@@ -89,7 +89,7 @@ async function paintColumnOne(quizName) {
   document.getElementById("participantCount").innerHTML = "";
   // setInterval(repeatedFileRead, 10000);
   repeatedFileRead();
-  setInterval(repeatedFileRead, 30000);
+  setInterval(repeatedFileRead, 15000);
 }
 
 var scoreArray = [];
