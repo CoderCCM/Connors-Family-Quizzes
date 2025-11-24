@@ -91,8 +91,11 @@ async function paintColumnOne(quizName) {
   setInterval(repeatedFileRead, 30000);
 }
 
+var scoreArray = [];
+var nameArray = [];
+
 async function repaint() {
-  var scoreArray = [];
+  
   document.getElementById("participants").innerHTML = "";
 
   var response = await fetch("/requestParticipantListByQuizName", {
@@ -107,7 +110,7 @@ async function repaint() {
     "Participants: " + String(Number(a.length));
   var highestscore = 0,
     highestIndex = [];
-  a.forEach(async function (item, indexier) {
+  a.filter(item => !nameArray.includes(item)).forEach(async function (item, indexier) {
     var score;
     var numRight = 0;
     var p = document.createElement("p");
@@ -141,6 +144,9 @@ async function repaint() {
           Math.floor(
             Number(numRight / quizzes[quizNameGlobal].questions.length) * 100
           )
+        );
+        nameArray.push(
+          item
         );
         console.log(scoreArray);
         p.innerHTML = item + "&nbsp;&nbsp;-&nbsp;&nbsp;" + score + "%";
