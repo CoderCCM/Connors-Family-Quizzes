@@ -94,6 +94,8 @@ async function paintColumnOne(quizName) {
 
 var scoreArray = [];
 var nameArray = [];
+  var highestscore = 0,
+    highestIndex = [];
 
 async function repaint() {
   
@@ -109,8 +111,6 @@ async function repaint() {
   var a = data.participants;
   document.getElementById("participantCount").innerHTML =
     "Participants: " + String(Number(a.length));
-  var highestscore = 0,
-    highestIndex = [];
   a.filter(item => !nameArray.includes(item)).forEach(async function (item, indexier) {
     var score;
     var numRight = 0;
@@ -155,7 +155,7 @@ async function repaint() {
 
         document.getElementById("participants").append(p);
         console.log(p);
-        if (indexier == a.length - 1) {
+        if (indexier == a.filter(item => !nameArray.includes(item)).length - 1) {
           await new Promise((r) => setTimeout(r, 1000));
 
           console.log(indexier);
@@ -176,6 +176,9 @@ async function repaint() {
             "Participants: " + Number(a.length);
           document.getElementById("avgScore").innerHTML =
             "Current Average: " + average + "%";
+          for (var lab_ind = 0; lab_ind < highestIndex; lab_ind++) {
+            document.getElementById(lab_ind).style.backgroundColor = "none";
+          }
           highestIndex.forEach(function (item) {
             document.getElementById(item).style.backgroundColor = "gold";
           });
