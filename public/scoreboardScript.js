@@ -94,99 +94,107 @@ async function paintColumnOne(quizName) {
 
 var scoreArray = [];
 var nameArray = [];
-  var highestscore = 0,
-    highestIndex = [];
+var highestscore = 0,
+  highestIndex = [];
 
 async function repaint() {
-  
-  //document.getElementById("participants").innerHTML = "";
-
-  var response = await fetch("/requestParticipantListByQuizName", {
+  // Fetch participant list
+  const response = await fetch("/requestParticipantListByQuizName", {
     method: "POST",
     body: JSON.stringify({ quizName: quizNameGlobal }),
     headers: { "Content-Type": "application/json" },
   });
-  console.log(response);
-  var data = await response.json();
-  var a = data.participants;
-  document.getElementById("participantCount").innerHTML =
-    "Participants: " + String(Number(a.length));
-  a.filter(item => !nameArray.includes(item)).forEach(async function (item, indexier) {
-    var score;
-    var numRight = 0;
-    var p = document.createElement("p");
 
-    var response = await fetch("/requestChoicesByName", {
+  const data = await response.json();
+  const participants = data.participants;
+
+  // Update participant count immediately
+  document.getElementById("participantCount").textContent =
+    "Participants: " + participants.length;
+
+  // Determine which participants are new BEFORE processing loop
+  const newParticipants = participants.filter(p => !nameArray.includes(p));
+
+  // For average score + highest score
+  let localScores = [];
+  let localHighest = 0;
+  let localHighestIndices = [];
+
+  for (let i = 0; i < newParticipants.length; i++) {
+    const participant = newParticipants[i];
+    let numRight = 0;
+
+    // Fetch participant choices
+    const choiceRes = await fetch("/requestChoicesByName", {
       method: "POST",
-      body: JSON.stringify({ quizName: quizNameGlobal, participantName: item }),
+      body: JSON.stringify({
+        quizName: quizNameGlobal,
+        participantName: participant,
+      }),
       headers: { "Content-Type": "application/json" },
-    }).then(async (response) => {
-      var data = await response.json().then(async (data) => {
-        var b = data.choices;
-        console.log(b);
-        b.forEach(function (selection, index) {
-          if (
-            selection == quizzes[quizNameGlobal].questions[index].correctAnswer
-          ) {
-            numRight++;
-          }
-        });
-        if (numRight > highestscore) {
-          highestscore = numRight;
-          highestIndex = [];
-          highestIndex.push(indexier);
-        } else if (numRight == highestscore) {
-          highestIndex.push(indexier);
-        }
-        var score = Math.floor(
-          Number(numRight / quizzes[quizNameGlobal].questions.length) * 100
-        );
-        scoreArray.push(
-          Math.floor(
-            Number(numRight / quizzes[quizNameGlobal].questions.length) * 100
-          )
-        );
-        nameArray.push(
-          item
-        );
-        console.log(scoreArray);
-        p.innerHTML = item + "&nbsp;&nbsp;-&nbsp;&nbsp;" + score + "%";
-        p.id = indexier;
-
-        document.getElementById("participants").append(p);
-        console.log(p);
-        if (indexier == a.filter(item => !nameArray.includes(item)).length - 1) {
-          await new Promise((r) => setTimeout(r, 1000));
-
-          console.log(indexier);
-          console.log("a");
-          //totalPointsPossible=Number(quizzes[quizName].questions.length)*a.length;
-          var sum = 0;
-          console.log("a");
-          console.log(scoreArray);
-          scoreArray.forEach(function (score) {
-            console.log(score);
-            sum = sum + Number(score);
-          });
-
-          console.log("a");
-          console.log("SUM ", sum);
-          var average = Math.floor(sum / scoreArray.length);
-          document.getElementById("participantCount").innerHTML =
-            "Participants: " + Number(a.length);
-          document.getElementById("avgScore").innerHTML =
-            "Current Average: " + average + "%";
-          for (var lab_ind = 0; lab_ind < highestIndex; lab_ind++) {
-            document.getElementById(lab_ind).style.backgroundColor = "none";
-          }
-          highestIndex.forEach(function (item) {
-            document.getElementById(item).style.backgroundColor = "gold";
-          });
-        }
-      });
     });
-  });
+
+    const choiceData = await choiceRes.json();
+    const selections = choiceData.choices;
+
+    // Calculate correct answers
+    for (let q = 0; q < selections.length; q++) {
+      if (selections[q] === quizzes[quizNameGlobal].questions[q].correctAnswer) {
+        numRight++;
+      }
+    }
+
+    // Convert to %
+    const score = Math.floor(
+      (numRight / quizzes[quizNameGlobal].questions.length) * 100
+    );
+
+    // Track global arrays
+    scoreArray.push(score);
+    nameArray.push(participant);
+
+    // Track local stats for this batch
+    localScores.push(score);
+    if (score > localHighest) {
+      localHighest = score;
+      localHighestIndices = [i];
+    } else if (score === localHighest) {
+      localHighestIndices.push(i);
+    }
+
+    // Render participant entry
+    const p = document.createElement("p");
+    p.textContent = `${participant} - ${score}%`;
+    p.id = `participant-${nameArray.length - 1}`;
+    document.getElementById("participants").append(p);
+  }
+
+  // === After ALL new participants processed ===
+  if (newParticipants.length > 0) {
+    await new Promise(r => setTimeout(r, 300));
+
+    const sum = scoreArray.reduce((a, b) => a + b, 0);
+    const average = Math.floor(sum / scoreArray.length);
+
+    document.getElementById("avgScore").textContent =
+      "Current Average: " + average + "%";
+
+    // Clear previous highlights
+    scoreArray.forEach((_, idx) => {
+      const elem = document.getElementById(`participant-${idx}`);
+      if (elem) elem.style.backgroundColor = "transparent";
+    });
+
+    // Highlight highest scorers
+    localHighestIndices.forEach(localIdx => {
+      const globalIdx =
+        nameArray.length - newParticipants.length + localIdx;
+      const elem = document.getElementById(`participant-${globalIdx}`);
+      if (elem) elem.style.backgroundColor = "gold";
+    });
+  }
 }
+
 
 var prevData = "";
 async function repeatedFileRead() {
