@@ -77,15 +77,15 @@ async function paintColumnOne(quizName) {
 
   document.getElementById("quizName").innerHTML = quizName;
 
-  var response = await fetch("/requestParticipantListByQuizNameLive", {
-    method: "POST",
-    body: JSON.stringify({ quizName: quizName }),
-    headers: { "Content-Type": "application/json" },
-  });
-  console.log(response);
-  var data = await response.json();
-  liveStreamDataFileName = data.fn;
-  console.log(liveStreamDataFileName);
+  // var response = await fetch("/requestParticipantListByQuizNameLive", {
+  //   method: "POST",
+  //   body: JSON.stringify({ quizName: quizName }),
+  //   headers: { "Content-Type": "application/json" },
+  // });
+  // console.log(response);
+  // var data = await response.json();
+  // liveStreamDataFileName = data.fn;
+  // console.log(liveStreamDataFileName);
   document.getElementById("participantCount").innerHTML = "";
   // setInterval(repeatedFileRead, 10000);
   setInterval(repeatedFileRead, 30000);
