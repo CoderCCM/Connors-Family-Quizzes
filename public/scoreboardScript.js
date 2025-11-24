@@ -87,7 +87,8 @@ async function paintColumnOne(quizName) {
   liveStreamDataFileName = data.fn;
   console.log(liveStreamDataFileName);
   document.getElementById("participantCount").innerHTML = "";
-  setInterval(repeatedFileRead, 10000);
+  // setInterval(repeatedFileRead, 10000);
+  setInterval(repeatedFileRead, 30000);
 }
 
 async function repaint() {
@@ -179,21 +180,21 @@ async function repaint() {
 
 var prevData = "";
 async function repeatedFileRead() {
-  var r = await fetch("/readLiveStreamFile", {
-    method: "POST",
-    body: JSON.stringify({ fn: liveStreamDataFileName }),
-    headers: { "Content-Type": "application/json" },
-  });
-  var data = await r.json();
-  data = data.d;
-  console.log(data, prevData);
-  if (data != prevData) {
+  // var r = await fetch("/readLiveStreamFile", {
+  //   method: "POST",
+  //   body: JSON.stringify({ fn: liveStreamDataFileName }),
+  //   headers: { "Content-Type": "application/json" },
+  // });
+  // var data = await r.json();
+  // data = data.d;
+  // console.log(data, prevData);
+  // if (data != prevData) {
     console.log("Repainting!");
     await repaint();
-  } else {
-    console.log("Equivalent Data. No need to repaint.");
-  }
-  prevData = data;
+  // } else {
+  //   console.log("Equivalent Data. No need to repaint.");
+  // }
+  // prevData = data;
 
   document.getElementById("updateTime").innerHTML =
     "Last Updated: " + new Date().toLocaleTimeString();
