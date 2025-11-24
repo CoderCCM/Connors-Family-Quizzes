@@ -88,6 +88,7 @@ async function paintColumnOne(quizName) {
   // console.log(liveStreamDataFileName);
   document.getElementById("participantCount").innerHTML = "";
   // setInterval(repeatedFileRead, 10000);
+  repeatedFileRead();
   setInterval(repeatedFileRead, 30000);
 }
 
@@ -96,7 +97,7 @@ var nameArray = [];
 
 async function repaint() {
   
-  document.getElementById("participants").innerHTML = "";
+  //document.getElementById("participants").innerHTML = "";
 
   var response = await fetch("/requestParticipantListByQuizName", {
     method: "POST",
