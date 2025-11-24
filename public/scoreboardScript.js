@@ -98,99 +98,98 @@ var highestscore = 0,
   highestIndex = [];
 
 async function repaint() {
+
   // Fetch participant list
-  const response = await fetch("/requestParticipantListByQuizName", {
+  const resp = await fetch("/requestParticipantListByQuizName", {
     method: "POST",
     body: JSON.stringify({ quizName: quizNameGlobal }),
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" }
   });
 
-  const data = await response.json();
+  const data = await resp.json();
   const participants = data.participants;
 
   // Update participant count immediately
   document.getElementById("participantCount").textContent =
     "Participants: " + participants.length;
 
-  // Determine which participants are new BEFORE processing loop
+  // Determine which participants are new
   const newParticipants = participants.filter(p => !nameArray.includes(p));
 
-  // For average score + highest score
-  let localScores = [];
-  let localHighest = 0;
-  let localHighestIndices = [];
+  // No need to compute averages if nobody new came in
+  if (newParticipants.length === 0) return;
 
-  for (let i = 0; i < newParticipants.length; i++) {
-    const participant = newParticipants[i];
+  let globalUpdateNeeded = false;
+
+  for (const participant of newParticipants) {
+
     let numRight = 0;
 
-    // Fetch participant choices
+    // Fetch participant's choices
     const choiceRes = await fetch("/requestChoicesByName", {
       method: "POST",
       body: JSON.stringify({
         quizName: quizNameGlobal,
-        participantName: participant,
+        participantName: participant
       }),
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" }
     });
 
     const choiceData = await choiceRes.json();
-    const selections = choiceData.choices;
+    const selections = choiceData.choices ?? [];
 
-    // Calculate correct answers
+    // Score calculation (convert both sides to number)
     for (let q = 0; q < selections.length; q++) {
-      if (selections[q] == quizzes[quizNameGlobal].questions[q].correctAnswer) {
-        numRight++;
-      }
+      const selected = Number(selections[q]);
+      const correct = Number(quizzes[quizNameGlobal].questions[q].correctAnswer);
+
+      if (selected === correct) numRight++;
     }
 
-    // Convert to %
     const score = Math.floor(
       (numRight / quizzes[quizNameGlobal].questions.length) * 100
     );
 
-    // Track global arrays
+    // Push into global arrays AFTER computing score
     scoreArray.push(score);
     nameArray.push(participant);
 
-    // Track local stats for this batch
-    localScores.push(score);
-    if (score > localHighest) {
-      localHighest = score;
-      localHighestIndices = [i];
-    } else if (score === localHighest) {
-      localHighestIndices.push(i);
-    }
+    // Determine this participant's global index
+    const globalIndex = nameArray.length - 1;
 
-    // Render participant entry
+    // Add DOM entry
     const p = document.createElement("p");
+    p.id = `participant-${globalIndex}`;
     p.textContent = `${participant} - ${score}%`;
-    p.id = `participant-${nameArray.length - 1}`;
     document.getElementById("participants").append(p);
+
+    globalUpdateNeeded = true;
   }
 
-  // === After ALL new participants processed ===
-  if (newParticipants.length > 0) {
-    await new Promise(r => setTimeout(r, 300));
+  // === All new participants processed → Update averages & highlights ===
+  if (globalUpdateNeeded) {
 
+    // Compute average
     const sum = scoreArray.reduce((a, b) => a + b, 0);
-    const average = Math.floor(sum / scoreArray.length);
+    const avg = Math.floor(sum / scoreArray.length);
 
     document.getElementById("avgScore").textContent =
-      "Current Average: " + average + "%";
+      "Current Average: " + avg + "%";
 
-    // Clear previous highlights
-    scoreArray.forEach((_, idx) => {
-      const elem = document.getElementById(`participant-${idx}`);
-      if (elem) elem.style.backgroundColor = "transparent";
+    // Find global highest score
+    const highest = Math.max(...scoreArray);
+
+    // Clear all highlights
+    document.querySelectorAll("#participants p").forEach(p => {
+      p.style.backgroundColor = "transparent";
     });
 
-    // Highlight highest scorers
-    localHighestIndices.forEach(localIdx => {
-      const globalIdx =
-        nameArray.length - newParticipants.length + localIdx;
-      const elem = document.getElementById(`participant-${globalIdx}`);
-      if (elem) elem.style.backgroundColor = "gold";
+    // Highlight all global highest scorers
+    scoreArray.forEach((score, idx) => {
+      if (score === highest) {
+        const elem = document.getElementById(`participant-${idx}`);
+        if (elem) elem.style.backgroundColor = "gold";
+      }
     });
   }
 }
