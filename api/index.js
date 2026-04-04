@@ -1,212 +1,197 @@
 // server.js
-// where your node app starts
 
-// we've started you off with Express (https://expressjs.com/)
-// but feel free to use whatever libraries or frameworks you'd like through `package.json`.
 const express = require("express");
-var bodyParser = require('body-parser')
-const fs = require("fs");
-const fetch = require("node-fetch")
-const { Headers, Response } = require('node-fetch');
-const serverless = require('serverless-http');
-global.fetch = fetch;
-global.Headers = Headers;
-global.Response = Response;
+const bodyParser = require("body-parser");
+const path = require("path");
+const serverless = require("serverless-http");
+require("dotenv").config();
 
-require('dotenv').config();
+// Firebase Admin
+const admin = require("firebase-admin");
 
-// create application/json parser
-var jsonParser = bodyParser.json()
-const app = express();
-
-const { initializeApp } = require('firebase/app');
-const { getAuth, signInWithEmailAndPassword } = require('firebase/auth');
-// Your web app's Firebase configuration
-var firebaseConfig = {
-    apiKey: process.env.apiKey,
-    authDomain: process.env.authDomain,
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(
+      JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+    ),
     databaseURL: process.env.databaseURL,
-    projectId: process.env.projectId,
-    storageBucket: process.env.storageBucket,
-    messagingSenderId: process.env.messagingSenderId,
-    appId: process.env.appId
-};
-// Initialize Firebase
-const firebaseApp = initializeApp(firebaseConfig);
-const auth = getAuth(firebaseApp);
-const { getDatabase, ref, get, set, onValue } = require('firebase/database');
-const db = getDatabase(firebaseApp);
+  });
+}
 
-let authPromise = signInWithEmailAndPassword(auth, process.env.authEmail, process.env.authPassword)
-    .then(() => {
-        console.log('✅ Firebase signed in');
-    })
-    .catch((error) => {
-        console.error('❌ Firebase sign-in failed:', error);
-    });
+const db = admin.database();
 
-const path = require('path');
+const app = express();
+const jsonParser = bodyParser.json();
 
-const router = express.Router();
-
-// Serve static files from /public
+// Serve static files
 app.use(express.static(path.join(__dirname, "../public")));
 
 // Routes
-router.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "../views/index.html"));
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../views/index.html"));
 });
 
-router.get("/5", (req, res) => {
-    res.sendFile(path.join(__dirname, "../views/quizCreator.html"));
+app.get("/5", (req, res) => {
+  res.sendFile(path.join(__dirname, "../views/quizCreator.html"));
 });
 
-router.get("/437143714371", (req, res) => {
-    res.sendFile(path.join(__dirname, "../views/adminPortal.html"));
+app.get("/437143714371", (req, res) => {
+  res.sendFile(path.join(__dirname, "../views/adminPortal.html"));
 });
 
-router.get("/scoreboard", (req, res) => {
-    res.sendFile(path.join(__dirname, "../views/liveScoreboard.html"));
+app.get("/scoreboard", (req, res) => {
+  res.sendFile(path.join(__dirname, "../views/liveScoreboard.html"));
 });
 
-// Use router under /.netlify/functions/api or /api depending on host
-app.use("/", router);
+// =======================
+// API ROUTES
+// =======================
 
-
-app.post('/requestQuizList', jsonParser, async (request, response) => {
-    console.log("New Connection!")
-    await authPromise;
-    var snapshot = await get(ref(db, 'quizList'));
-    var c = []
-    var c = snapshot.val()
-    response.json({ quizList: c })
-})
-
-
-
-app.post('/requestQuestions', jsonParser, async (request, response) => {
-    console.log(request.body)
-    await authPromise;
-    var snapshot = await get(ref(db, request.body.quizName + " - Questions"))
-    var properties = await get(ref(db, request.body.quizName + " - Properties"))
-    var c = []
-    c = snapshot.val()
-    var d = []
-    d = properties.val().split("!@#$%^&*()")
-    response.json({ questions: c, backgroundColor: d[0], backgroundImage: d[1] })
-
-});
-
-
-app.post('/requestChoicesByName', jsonParser, async (request, response) => {
-    await authPromise;
-    var snapshot = await get(ref(db, request.body.quizName + " - " + request.body.participantName + " - Choices"))
-    var c = []
-    c = snapshot.val()
-    response.json({ choices: c })
-
-});
-
-app.post('/submitChoicesByName', jsonParser, async (request, response) => {
-    await authPromise;
-    await set(ref(db, request.body.quizName + " - " + request.body.participantName + " - Choices"), request.body.choices);
-
-    var snapshot = await get(ref(db, request.body.quizName + " - QuizTakers"))
-    var a = []
-    a = snapshot.val()
-    if (a.indexOf(request.participantName) == -1) {
-        a.push(request.body.participantName)
-    }
-    await set(ref(db, request.body.quizName + " - QuizTakers"), a)
-    response.json({ "A": "A" })
-
-});
-
-
-app.post('/requestParticipantListByQuizName', jsonParser, async (request, response) => {
-    await authPromise;
-    var snapshot = await get(ref(db, request.body.quizName + " - QuizTakers"))
-    var c = new Array();
-    c = snapshot.val()
-
-    var dudIndex = c.indexOf("Q!W@E#R$T%Y^U&I*O(P)");
-    c.splice(dudIndex, 1);
-    console.log(c)
-    response.json({ participants: c })
-});
-
-/*app.post('/requestParticipantListByQuizNameLive', jsonParser, async (request, response) => {
-
-var fileName = String(Math.floor(Math.random() * 10000000000) + 1) + "QuizTakers.txt";
-await authPromise;
-    onValue(ref(db, request.body.quizName + " - QuizTakers"), (snapshot) => {
-    console.log("DATA CHANGE!");
-    var c = new Array();
-    c = snapshot.val()
-
-    var dudIndex = c.indexOf("Q!W@E#R$T%Y^U&I*O(P)");//get  "car" index
-//remove car from the colors array
-c.splice(dudIndex, 1); // colors = ["red","blue","green"]
-    console.log(c)
-
-    fs.writeFileSync("liveStreamDataFiles/" + fileName, c.toString());
-
-
-  })
-  await sleep(1000);
-  response.json({fn: fileName})
-});
-
-async function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-app.post('/readLiveStreamFile', jsonParser, async (request, response) => {
-
-fs.readFile("liveStreamDataFiles/" + request.body.fn, 'utf8', function (err, data) {
-  if (err) {
-    return console.log(err);
+app.post("/requestQuizList", jsonParser, async (req, res) => {
+  try {
+    const snapshot = await db.ref("quizList").once("value");
+    res.json({ quizList: snapshot.val() || [] });
+  } catch (err) {
+    console.error("requestQuizList error:", err);
+    res.status(500).send("Internal error");
   }
-  console.log(data);
-  response.json({d: String(data)})
-
-});
-});*/
-
-app.post('/requestIfNameAlreadyExists', jsonParser, async (request, response) => {
-    await authPromise;
-    var rc = false;
-    var snapshot = await get(ref(db, request.body.quiz + ' - QuizTakers'))
-    var c = []
-    var c = snapshot.val()
-    if (c.indexOf(request.body.participantName) > -1) {
-        rc = true
-    }
-    response.json({ alreadyExists: rc })
 });
 
+app.post("/requestQuestions", jsonParser, async (req, res) => {
+  try {
+    const quizName = req.body.quizName;
 
+    const [questionsSnap, propsSnap] = await Promise.all([
+      db.ref(`${quizName} - Questions`).once("value"),
+      db.ref(`${quizName} - Properties`).once("value"),
+    ]);
 
+    const questions = questionsSnap.val();
+    const props = (propsSnap.val() || "").split("!@#$%^&*()");
 
-
-
-app.post('/createQuiz', jsonParser, async (request, response) => {
-    await authPromise;
-
-    await set(ref(db, request.body.quizName + " - Properties"), request.body.backgroundColor + "!@#$%^&*()" + request.body.backgroundImage);
-    await set(ref(db, request.body.quizName + " - Questions"), request.body.questions);
-    await set(ref(db, request.body.quizName + " - QuizTakers"), ["Q!W@E#R$T%Y^U&I*O(P)"]);
-
-
-    await get(ref(db, "quizList")).then(async (snapshot) => {
-        var a = []
-        a = snapshot.val()
-        a.push(request.body.quizName)
-
-        await set(ref(db, "quizList"), a);
+    res.json({
+      questions,
+      backgroundColor: props[0],
+      backgroundImage: props[1],
     });
+  } catch (err) {
+    console.error("requestQuestions error:", err);
+    res.status(500).send("Internal error");
+  }
 });
 
+app.post("/requestChoicesByName", jsonParser, async (req, res) => {
+  try {
+    const { quizName, participantName } = req.body;
+
+    const snapshot = await db
+      .ref(`${quizName} - ${participantName} - Choices`)
+      .once("value");
+
+    res.json({ choices: snapshot.val() });
+  } catch (err) {
+    console.error("requestChoicesByName error:", err);
+    res.status(500).send("Internal error");
+  }
+});
+
+app.post("/submitChoicesByName", jsonParser, async (req, res) => {
+  try {
+    const { quizName, participantName, choices } = req.body;
+
+    await db
+      .ref(`${quizName} - ${participantName} - Choices`)
+      .set(choices);
+
+    const snapshot = await db
+      .ref(`${quizName} - QuizTakers`)
+      .once("value");
+
+    let list = snapshot.val() || [];
+
+    // ✅ fixed bug here
+    if (!list.includes(participantName)) {
+      list.push(participantName);
+      await db.ref(`${quizName} - QuizTakers`).set(list);
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("submitChoicesByName error:", err);
+    res.status(500).send("Internal error");
+  }
+});
+
+app.post("/requestParticipantListByQuizName", jsonParser, async (req, res) => {
+  try {
+    const { quizName } = req.body;
+
+    const snapshot = await db
+      .ref(`${quizName} - QuizTakers`)
+      .once("value");
+
+    let list = snapshot.val() || [];
+
+    // remove dummy entry
+    list = list.filter(
+      (x) => x !== "Q!W@E#R$T%Y^U&I*O(P)"
+    );
+
+    res.json({ participants: list });
+  } catch (err) {
+    console.error("requestParticipantList error:", err);
+    res.status(500).send("Internal error");
+  }
+});
+
+app.post("/requestIfNameAlreadyExists", jsonParser, async (req, res) => {
+  try {
+    const { quiz, participantName } = req.body;
+
+    const snapshot = await db
+      .ref(`${quiz} - QuizTakers`)
+      .once("value");
+
+    const list = snapshot.val() || [];
+
+    res.json({ alreadyExists: list.includes(participantName) });
+  } catch (err) {
+    console.error("requestIfNameAlreadyExists error:", err);
+    res.status(500).send("Internal error");
+  }
+});
+
+app.post("/createQuiz", jsonParser, async (req, res) => {
+  try {
+    const { quizName, backgroundColor, backgroundImage, questions } = req.body;
+
+    await Promise.all([
+      db
+        .ref(`${quizName} - Properties`)
+        .set(`${backgroundColor}!@#$%^&*()${backgroundImage}`),
+
+      db.ref(`${quizName} - Questions`).set(questions),
+
+      db
+        .ref(`${quizName} - QuizTakers`)
+        .set(["Q!W@E#R$T%Y^U&I*O(P)"]),
+    ]);
+
+    const snapshot = await db.ref("quizList").once("value");
+    let list = snapshot.val() || [];
+
+    list.push(quizName);
+
+    await db.ref("quizList").set(list);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("createQuiz error:", err);
+    res.status(500).send("Internal error");
+  }
+});
+
+// =======================
 
 module.exports = app;
 module.exports.handler = serverless(app);
