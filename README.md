@@ -20,10 +20,10 @@ A quiz app built on Node and Express with a live scoreboard and quiz analytics. 
 ```
 Connors-Family-Quizzes/
 ├── api/                    # Serverless API route handlers
+│   └── index.js            # Express app entry point
 ├── liveStreamDataFiles/    # Data files consumed by the live scoreboard
 ├── public/                 # Static assets (CSS, client-side JS, images)
 ├── views/                  # HTML template views
-├── index.js                # Express app entry point
 ├── vercel.json             # Vercel deployment config
 └── package.json
 ```
@@ -60,8 +60,10 @@ databaseURL=https://your_project.firebaseio.com
 
 ### Running Locally
 
+Install dependencies and use the Vercel CLI to run the app locally:
+
 ```bash
-node index.js
+npx vercel dev
 ```
 
 ---

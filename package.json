@@ -2,12 +2,13 @@
   "//1": "describes your app and its dependencies",
   "//2": "https://docs.npmjs.com/files/package.json",
   "//3": "updating this file will download and update your packages",
-  "name": "hello-express",
+  "name": "connors-family-quizzes",
   "version": "0.0.1",
-  "description": "A simple Node app built on Express, instantly up and running.",
-  "main": "server.js",
+  "description": "A family quiz app built on Express and Firebase, deployed serverlessly on Vercel.",
+  "main": "api/index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "npx vercel dev",
+    "dev": "npx vercel dev"
   },
   "dependencies": {
     "body-parser": "^1.20.4",
@@ -25,12 +26,15 @@
     "node": "22.x"
   },
   "repository": {
-    "url": "https://glitch.com/edit/#!/hello-express"
+    "type": "git",
+    "url": "https://github.com/CoderCCM/Connors-Family-Quizzes.git"
   },
   "license": "MIT",
   "keywords": [
     "node",
-    "glitch",
-    "express"
+    "express",
+    "firebase",
+    "vercel",
+    "quiz"
   ]
 }
