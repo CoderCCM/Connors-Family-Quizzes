@@ -7,18 +7,19 @@ const serverless = require("serverless-http");
 require("dotenv").config();
 
 // Firebase Admin
-const admin = require("firebase-admin");
+const { initializeApp, cert, getApps } = require("firebase-admin/app");
+const { getDatabase } = require("firebase-admin/database");
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(
+if (!getApps().length) {
+  initializeApp({
+    credential: cert(
       JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
     ),
     databaseURL: process.env.databaseURL,
   });
 }
 
-const db = admin.database();
+const db = getDatabase();
 
 const app = express();
 const jsonParser = bodyParser.json();
