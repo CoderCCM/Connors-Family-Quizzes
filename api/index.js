@@ -3,6 +3,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const path = require("path");
+const crypto = require("crypto");
 const serverless = require("serverless-http");
 require("dotenv").config();
 
@@ -24,6 +25,51 @@ const db = getDatabase();
 const app = express();
 const jsonParser = bodyParser.json();
 
+function requirePassword(environmentVariable) {
+  return function (req, res, next) {
+    const password = process.env[environmentVariable];
+
+    if (!password) {
+      console.error(`${environmentVariable} is not configured`);
+      return res.status(503).send("Password authentication is not configured");
+    }
+
+    const authorization = req.headers.authorization;
+    if (!authorization || !authorization.startsWith("Basic ")) {
+      res.set("WWW-Authenticate", 'Basic realm="Protected Area", charset="UTF-8"');
+      return res.status(401).send("Authentication required");
+    }
+
+    let credentials;
+    try {
+      credentials = Buffer.from(
+        authorization.slice("Basic ".length),
+        "base64"
+      ).toString("utf8");
+    } catch (err) {
+      res.set("WWW-Authenticate", 'Basic realm="Protected Area", charset="UTF-8"');
+      return res.status(401).send("Invalid credentials");
+    }
+
+    const separatorIndex = credentials.indexOf(":");
+    const suppliedPassword =
+      separatorIndex === -1 ? "" : credentials.slice(separatorIndex + 1);
+
+    const expected = Buffer.from(password);
+    const supplied = Buffer.from(suppliedPassword);
+    const passwordsMatch =
+      expected.length === supplied.length &&
+      crypto.timingSafeEqual(expected, supplied);
+
+    if (!passwordsMatch) {
+      res.set("WWW-Authenticate", 'Basic realm="Protected Area", charset="UTF-8"');
+      return res.status(401).send("Invalid credentials");
+    }
+
+    next();
+  };
+}
+
 // Serve static files
 app.use(express.static(path.join(__dirname, "../public")));
 
@@ -32,11 +78,11 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../views/index.html"));
 });
 
-app.get("/5", (req, res) => {
+app.get("/5", requirePassword("QUIZ_CREATOR_PASSWORD"), (req, res) => {
   res.sendFile(path.join(__dirname, "../views/quizCreator.html"));
 });
 
-app.get("/437143714371", (req, res) => {
+app.get("/437143714371", requirePassword("ADMIN_PASSWORD"), (req, res) => {
   res.sendFile(path.join(__dirname, "../views/adminPortal.html"));
 });
 
@@ -110,7 +156,6 @@ app.post("/submitChoicesByName", jsonParser, async (req, res) => {
 
     let list = snapshot.val() || [];
 
-    // ✅ fixed bug here
     if (!list.includes(participantName)) {
       list.push(participantName);
       await db.ref(`${quizName} - QuizTakers`).set(list);
@@ -162,7 +207,7 @@ app.post("/requestIfNameAlreadyExists", jsonParser, async (req, res) => {
   }
 });
 
-app.post("/createQuiz", jsonParser, async (req, res) => {
+app.post("/createQuiz", jsonParser, requirePassword("QUIZ_CREATOR_PASSWORD"), async (req, res) => {
   try {
     const { quizName, backgroundColor, backgroundImage, questions } = req.body;
 
