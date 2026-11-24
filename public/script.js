@@ -312,6 +312,9 @@ function displayNext() {
     if (questionCounter < questions.length) {
       var nextQuestion = createQuestionElement(questionCounter);
       quiz.append(nextQuestion).fadeIn();
+      $("#next a").text(
+        questionCounter === questions.length - 1 ? "Submit" : "Next"
+      );
       if (!isNaN(selections[questionCounter])) {
         $("input[value=" + selections[questionCounter] + "]").prop(
           "checked",
