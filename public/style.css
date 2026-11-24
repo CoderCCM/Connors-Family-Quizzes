@@ -107,6 +107,7 @@ html {
 .centerButtons {
   position: absolute;
   left: 50%;
+  font-size: 1.5em;
   transform: translateX(-50%);
   -webkit-transform: translateX(-50%);
 }
