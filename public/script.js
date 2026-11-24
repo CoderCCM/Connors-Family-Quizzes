@@ -261,9 +261,10 @@ function createQuestionElement(index) {
       (index + 1) +
       "/" +
       questions.length +
-      " (" +
-      Math.round(Number(index / questions.length) * 100) +
-      "%  completed):</h2>"
+      // " (" +
+      // Math.round(Number(index / questions.length) * 100) +
+      // "%  completed):</h2>"
+      "</h2>"
   );
   qElement.append(header);
 
