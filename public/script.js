@@ -91,7 +91,7 @@ async function openScorePage(quizName) {
   container.append(h2);
   var h2 = document.createElement("h2");
   h2.innerHTML =
-    "Attempted: " + new Date(Number(localStorage.getItem(quizName + "-Taken")));
+    "Attempted: " + new Date(Number(localStorage.getItem(quizName + "-Taken"))).toLocaleDateString() + " " + new Date(Number(localStorage.getItem(quizName + "-Taken"))).toLocaleTimeString();
   c.append(h2);
 
   var h1 = document.createElement("h1");
@@ -378,7 +378,7 @@ async function displayScore() {
   c.append(h2);
   var h2 = document.createElement("h2");
   h2.innerHTML =
-    "Attempted: " + new Date(Number(localStorage.getItem(quizName + "-Taken")));
+    "Attempted: " + new Date(Number(localStorage.getItem(quizName + "-Taken"))).toLocaleDateString() + " " + new Date(Number(localStorage.getItem(quizName + "-Taken"))).toLocaleTimeString();
   c.append(h2);
 
   var h1 = document.createElement("h1");
