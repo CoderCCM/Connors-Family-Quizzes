@@ -292,5 +292,5 @@ function findNumPeopleThatChoseOption(selectionsa, indexer, index) {
 }
 
 function openLiveScoreboard() {
-  location.push("/scoreboard?qName=" + encodeURIComponent(quizNameGlobal));
+  location.assign("/scoreboard?qName=" + encodeURIComponent(quizNameGlobal));
 }
