@@ -311,6 +311,11 @@ ul {
   transition: transform 0.1s;
 }
 
+.checkmark {
+  color: #1fa83c;
+  font-weight: bold;
+}
+
 .centerButtons:active {
   transform: scale(0.98);
 }

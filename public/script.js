@@ -24,18 +24,18 @@ async function blah() {
     button.innerHTML = item;
     button.id = item;
     if (localStorage.getItem(item + "-Taken")) {
-      button.innerHTML += " - View Score";
+      button.innerHTML = takenLabel(item);
       button.onclick = function () {
         button.disabled = "true";
         button.innerHTML = "LOADING QUIZ";
         openScorePage(item)
           .then(function (ok) {
-            if (ok === false) restoreButton(button, item + " - View Score");
+            if (ok === false) restoreButton(button, takenLabel(item));
           })
           .catch(function (error) {
             console.error("openScorePage error:", error);
             alert("Something went wrong loading your score. Please try again.");
-            restoreButton(button, item + " - View Score");
+            restoreButton(button, takenLabel(item));
           });
       };
     } else {
@@ -64,6 +64,11 @@ async function blah() {
   if (qNameAutoOpen) {
     document.getElementById(qNameAutoOpen).click();
   }
+}
+
+// Label for a quiz this device has already taken: green checkmark + name
+function takenLabel(item) {
+  return '<span class="checkmark">\u2714</span> ' + item;
 }
 
 function restoreButton(button, label) {
