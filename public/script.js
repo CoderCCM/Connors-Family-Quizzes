@@ -515,18 +515,6 @@ function createQuestionElement(index) {
   // filed under a different question (e.g. a tap during the fade animation)
   qElement.attr("data-index", index);
 
-  var header = $(
-    "<h2>Question " +
-      (index + 1) +
-      "/" +
-      questions.length +
-      // " (" +
-      // Math.round(Number(index / questions.length) * 100) +
-      // "%  completed):</h2>"
-      "</h2>"
-  );
-  qElement.append(header);
-
   var parts = [];
   parts = questions[index].split("!@#$%^&*()");
   var actualQuestionText = parts[0];
