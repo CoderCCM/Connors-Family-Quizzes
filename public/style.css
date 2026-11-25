@@ -201,7 +201,7 @@ ul {
   display: none;
 }
 
-#container.results > h1 {
+#container.results #resultsWrap > h1 {
   font-size: 1.5em;
   margin: 6px 0 8px;
 }

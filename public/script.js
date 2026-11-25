@@ -66,11 +66,33 @@ var selections = []; //Array containing user choices
 var quiz = $("#quiz"); //Quiz div object
 // Display initial question
 
+// Results are built inside a detached #resultsWrap and only added to the page
+// once everything has succeeded, so a failed load can't leave half a results
+// page behind to show up under the next quiz.
+function createResultsContainer() {
+  var wrap = document.createElement("div");
+  wrap.id = "resultsWrap";
+  return wrap;
+}
+
+function showResults(wrap) {
+  clearResults();
+  document.getElementById("container").classList.add("results");
+  document.getElementById("container").append(wrap);
+  document.getElementById("next").style.display = "none";
+}
+
+// Removes any results page and puts the container back to quiz-taking mode
+function clearResults() {
+  var old = document.getElementById("resultsWrap");
+  if (old) old.remove();
+  document.getElementById("container").classList.remove("results");
+  document.getElementById("next").style.display = "";
+}
+
 // Builds: [NAME]'s Quiz: -> red-pen score -> attempted date.
 // Returns the score element so the caller can fill in the grade text.
 function addResultsHeader(c, name, quizNameForDate) {
-  c.classList.add("results");
-
   var h1 = document.createElement("h1");
   h1.textContent = name + "'s Quiz:";
   c.append(h1);
@@ -135,10 +157,8 @@ async function openScorePage(quizName) {
   var data = await response.json();
   var choices = data.choices;
 
-  document.getElementById("next").style.display = "none";
-  var container = document.getElementById("container");
-  var c = document.getElementById("container");
-
+  // Build the results off-screen; nothing touches the page until the end.
+  var c = createResultsContainer();
   var scoreEl = addResultsHeader(c, participantName, quizName);
 
   var correctQuestionCounter = 0;
@@ -179,6 +199,7 @@ async function openScorePage(quizName) {
     " " +
     Math.floor((correctQuestionCounter / actualQuestions.length) * 100) +
     "%";
+  showResults(c);
   document.getElementById("quizListOverlay").style.display = "none";
 }
 
@@ -275,6 +296,9 @@ async function beginQuiz(qName) {
     data.backgroundColor;
 
   quizName = qName;
+  clearResults(); // never show leftovers from an earlier attempt
+  questionCounter = 0;
+  selections = [];
   document.getElementById("currentQuiz").innerHTML = qName;
   displayNext();
   document.getElementById("quizListOverlay").style.display = "none";
@@ -425,8 +449,6 @@ function displayNext() {
 
 // Computes score and returns a paragraph element to be displayed
 async function displayScore() {
-  var c = document.getElementById("container");
-
   var score = $("<h2>", { id: "question" });
   if (!isValidName(participantName) || !quizName) {
     alert("Your name is missing, so your results could not be reported.");
@@ -470,6 +492,7 @@ async function displayScore() {
     }
   }
 
+  var c = createResultsContainer();
   var scoreEl = addResultsHeader(c, participantName, quizName);
   scoreEl.textContent =
     numCorrect +
@@ -507,5 +530,6 @@ async function displayScore() {
     });
   });
 
+  showResults(c);
   return score;
 }
