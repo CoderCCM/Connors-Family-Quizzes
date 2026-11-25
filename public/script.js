@@ -314,7 +314,6 @@ async function beginQuiz(qName) {
   clearResults(); // never show leftovers from an earlier attempt
   questionCounter = 0;
   selections = [];
-  visited = [];
   buildProgress();
   document.getElementById("currentQuiz").innerHTML = qName;
   displayNext();
@@ -323,11 +322,10 @@ async function beginQuiz(qName) {
 }
 
 // ---------- Progress tracker ----------
-// One hexagon per question on a connecting line:
-//   check = answered, X = skipped (left unanswered), gray = not answered yet.
-// The current question is enlarged and glowing. Tap a hexagon to jump to it.
-var visited = []; // questions that have been shown at least once
-
+// A hexagon per question on a connecting line, but only the previous / current /
+// next ones are shown. The track slides as you move, and the current hexagon is
+// the big one. Filled like a selected answer = answered; like an unselected
+// answer = not answered yet. Tap the previous/next hexagon to jump to it.
 function isAnswered(i) {
   return typeof selections[i] === "number" && !isNaN(selections[i]);
 }
@@ -344,7 +342,7 @@ var HEX_POINTS = "17,1.5 32,10 32,28 17,36.5 2,28 2,10";
 
 function buildProgress() {
   var $p = $("#progress").empty();
-  var scroller = $('<div class="progressScroll"></div>');
+  var win = $('<div class="progressWindow"></div>');
   var track = $('<div class="progressTrack"></div>');
   for (var i = 0; i < questions.length; i++) {
     if (i > 0) track.append('<span class="link"></span>');
@@ -357,65 +355,38 @@ function buildProgress() {
         '"/>' +
         '<text class="num" x="17" y="23.6" text-anchor="middle">' +
         (i + 1) +
-        "</text>" +
-        "</svg></button>"
+        "</text></svg></button>"
     );
   }
-  scroller.append(track);
-  $p.append(scroller, '<div class="progressCaption"></div>');
-  sizeProgress();
+  win.append(track);
+  $p.append(win, '<div class="progressCaption"></div>');
 }
 
-// Shrinks the hexagons to fit the width when there are lots of questions
-// (below a minimum size the row scrolls sideways instead)
-function sizeProgress() {
-  var n = questions.length;
-  var el = document.getElementById("progress");
-  if (!n || !el) return;
-  var per = (el.clientWidth || 300) / n;
-  el.style.setProperty(
-    "--hexW",
-    Math.max(22, Math.min(36, Math.floor(per * 0.7))) + "px"
-  );
-  el.style.setProperty(
-    "--linkW",
-    Math.max(4, Math.min(18, Math.floor(per * 0.3))) + "px"
-  );
-}
-window.addEventListener("resize", sizeProgress);
-
-function refreshProgress(centerCurrent) {
+function refreshProgress() {
   var n = questions.length;
   var answered = 0;
   $("#progress .step").each(function (i) {
     var done = isAnswered(i);
     if (done) answered++;
-    var state = done
-      ? "done"
-      : visited[i] && i !== questionCounter
-      ? "skipped"
-      : "todo";
     var label =
-      "Question " +
-      (i + 1) +
-      ": " +
-      (state === "done"
-        ? "answered"
-        : state === "skipped"
-        ? "skipped, still unanswered"
-        : "not answered yet");
+      "Question " + (i + 1) + ": " + (done ? "answered" : "not answered yet");
     $(this)
-      .removeClass("done skipped todo")
-      .addClass(state)
+      .removeClass("done todo")
+      .addClass(done ? "done" : "todo")
       .toggleClass("current", i === questionCounter)
       .attr("aria-label", label)
       .attr("title", label);
+    // only the previous / current / next hexagons are on screen
+    this.tabIndex = Math.abs(i - questionCounter) <= 1 ? 0 : -1;
     if (i === questionCounter) this.setAttribute("aria-current", "step");
     else this.removeAttribute("aria-current");
   });
   $("#progress .link").each(function (i) {
     $(this).toggleClass("filled", i < questionCounter);
   });
+  // sliding the track is what animates the move to the next/previous question
+  var track = document.querySelector("#progress .progressTrack");
+  if (track) track.style.setProperty("--i", Math.min(questionCounter, n - 1));
   $("#progress .progressCaption").text(
     answered === n
       ? "All answered \u2014 ready to submit"
@@ -423,15 +394,6 @@ function refreshProgress(centerCurrent) {
   );
   // Submit looks dimmed until every question has an answer
   $("#next").toggleClass("locked", questionCounter === n - 1 && answered < n);
-
-  if (centerCurrent) {
-    var scroller = document.querySelector("#progress .progressScroll");
-    var cur = document.querySelector("#progress .step.current");
-    if (scroller && cur) {
-      scroller.scrollLeft =
-        cur.offsetLeft - (scroller.clientWidth - cur.offsetWidth) / 2;
-    }
-  }
 }
 
 // Tap a hexagon to jump to that question
@@ -455,7 +417,7 @@ function updateClearButton() {
 // Mark a question answered the moment a choice is picked
 quiz.on("change", 'input[name="answer"]', function () {
   selections[questionCounter] = +this.value;
-  refreshProgress(false);
+  refreshProgress();
   updateClearButton();
 });
 
@@ -467,7 +429,7 @@ quiz.on("click", ".clearBtn", function (e) {
   }
   $('input[name="answer"]').prop("checked", false);
   selections[questionCounter] = NaN;
-  refreshProgress(false);
+  refreshProgress();
   updateClearButton();
 });
 
@@ -530,7 +492,6 @@ $("#start").on("click", function (e) {
   }
   questionCounter = 0;
   selections = [];
-  visited = [];
   displayNext();
   $("#start").hide();
 });
@@ -606,8 +567,7 @@ function choose() {
 function displayNext() {
   // update the tracker right away so it responds instantly
   if (questionCounter < questions.length) {
-    visited[questionCounter] = true;
-    refreshProgress(true);
+    refreshProgress();
   }
   quiz.fadeOut(function () {
     $("#question").remove();

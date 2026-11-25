@@ -170,40 +170,44 @@ ul {
 /* ---------- Progress tracker ---------- */
 
 #progress {
+  --hexW: 34px;
+  --linkW: 26px;
   margin: 4px 0 12px;
 }
 
-.progressScroll {
-  overflow-x: auto;
-  padding: 10px 8px; /* room for the current hexagon's glow */
-  scroll-behavior: smooth;
-  scrollbar-width: none;
+/* shows exactly three slots: previous, current, next */
+.progressWindow {
+  box-sizing: content-box;
+  width: calc(3 * var(--hexW) + 2 * var(--linkW));
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 14px 10px; /* room for the enlarged hexagon */
+  overflow: hidden;
 }
 
-.progressScroll::-webkit-scrollbar {
-  display: none;
-}
-
+/* every hexagon sits on this strip; sliding it moves the window */
 .progressTrack {
-  position: relative;
   display: flex;
   align-items: center;
   width: max-content;
-  margin: 0 auto;
+  transform: translateX(
+    calc((1 - var(--i, 0)) * (var(--hexW) + var(--linkW)))
+  );
+  transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* the line between hexagons; fills in as you move through the quiz */
+/* the line between hexagons; fills in behind you as you progress */
 .link {
   flex: 0 0 auto;
-  width: var(--linkW, 12px);
+  width: var(--linkW);
   height: 3px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.3);
-  transition: background-color 0.3s;
+  background: rgba(255, 255, 255, 0.3); /* same as an unselected answer's border */
+  transition: background-color 0.45s;
 }
 
 .link.filled {
-  background: #ffffff;
+  background: #ffffff; /* same as a selected answer's border */
 }
 
 /* overrides the global "button" float/position rules */
@@ -211,8 +215,8 @@ ul {
   float: none;
   position: relative;
   flex: 0 0 auto;
-  width: var(--hexW, 30px);
-  height: calc(var(--hexW, 30px) * 38 / 34);
+  width: var(--hexW);
+  height: calc(var(--hexW) * 38 / 34);
   margin: 0;
   padding: 0;
   border: none;
@@ -226,15 +230,30 @@ ul {
   width: 100%;
   height: 100%;
   overflow: visible;
-  transition: transform 0.25s;
+  transform: scale(0.8);
+  opacity: 0.85;
+  transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.45s;
 }
 
+/* current question: noticeably bigger */
+.step.current svg {
+  transform: scale(1.3);
+  opacity: 1;
+}
+
+/* not answered: looks like an unselected answer choice */
 .hexShape {
-  fill: #6b7280; /* gray: not answered yet */
-  stroke: #ffffff;
+  fill: rgba(0, 0, 0, 0.18);
+  stroke: rgba(255, 255, 255, 0.3);
   stroke-width: 2;
   stroke-linejoin: round;
-  transition: fill 0.25s, stroke 0.25s;
+  transition: fill 0.45s, stroke 0.45s;
+}
+
+/* answered: looks like the selected answer choice */
+.step.done .hexShape {
+  fill: rgba(0, 0, 0, 0.4);
+  stroke: #ffffff;
 }
 
 .num {
@@ -245,23 +264,6 @@ ul {
   pointer-events: none;
 }
 
-/* answered = green, skipped = red (gray is the default above) */
-.step.done .hexShape {
-  fill: #15803d;
-}
-
-.step.skipped .hexShape {
-  fill: #dc2626;
-}
-
-/* current question: bigger, with a glow */
-.step.current svg {
-  transform: scale(1.18);
-}
-.step.current .hexShape {
-  stroke-width: 3;
-  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9));
-}
 .step:focus-visible {
   outline: 2px solid #ffffff;
   outline-offset: 2px;
@@ -312,13 +314,11 @@ ul {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .progressTrack,
   .step svg,
   .hexShape,
   .link {
     transition: none;
-  }
-  .progressScroll {
-    scroll-behavior: auto;
   }
 }
 
