@@ -281,13 +281,24 @@ function updatePreview() {
   var ul = byId("pvOptions");
   ul.innerHTML = "";
   var any = false;
-  optionRows(card).forEach(function (row) {
+  var rows = optionRows(card);
+  var hasCorrect = rows.some(function (row) {
+    return row.querySelector(".ocorrect").checked;
+  });
+  var shownWrong = false;
+  rows.forEach(function (row) {
     var t = row.querySelector(".otext").value.trim();
     if (!t) return;
     any = true;
     var li = document.createElement("li");
     li.textContent = t;
-    if (row.querySelector(".ocorrect").checked) li.className = "correct";
+    if (row.querySelector(".ocorrect").checked) {
+      li.className = "correct";
+    } else if (hasCorrect && !shownWrong) {
+      // the quiz page shows a wrong pick in red, so show one the same way
+      li.className = "wrong";
+      shownWrong = true;
+    }
     ul.append(li);
   });
   if (!any) {

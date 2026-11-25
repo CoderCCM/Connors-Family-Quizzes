@@ -621,6 +621,8 @@ input[type="color"] {
 }
 
 .pv-opts li {
+  display: flex;
+  align-items: center;
   margin: 6px 0;
   padding: 8px 10px;
   font-size: 0.9em;
@@ -636,8 +638,8 @@ input[type="color"] {
   display: inline-block;
   width: 0.75em;
   height: 0.75em;
+  flex: none;
   margin-right: 0.55em;
-  vertical-align: -0.05em;
   border: 2px solid #fff;
   border-radius: 50%;
 }
@@ -646,6 +648,11 @@ input[type="color"] {
   color: #064d1a;
   background: lightgreen;
   border-color: rgba(6, 77, 26, 0.35);
+}
+
+.pv-opts li.wrong {
+  background: red;
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .pv-opts li.correct::before {
