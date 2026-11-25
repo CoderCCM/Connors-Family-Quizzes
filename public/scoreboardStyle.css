@@ -123,6 +123,8 @@ h3 {
   column-width: 30vh;
   column-gap: 2vw;
   column-fill: auto;
+  /* room for the gold glow so the container doesn't clip it */
+  padding: 1.6vh;
 }
 
 #participants p {
@@ -148,7 +150,7 @@ h3 {
 }
 
 #participants p[style*="gold"]::before {
-  content: "\1F451  ";
+  content: var(--leader-emoji, "\1F451  ");
 }
 
 @keyframes enter {

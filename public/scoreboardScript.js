@@ -216,3 +216,58 @@ async function repeatedFileRead() {
   document.getElementById("updateTime").innerHTML =
     "Last Updated: " + new Date().toLocaleTimeString();
 }
+
+
+// ---------- Secret: change the leader emoji ----------
+// Press "E" on the scoreboard (needs a keyboard), or open the page with
+// &emoji=🏆 on the end of the URL. The choice is remembered on this device.
+// Enter nothing in the prompt to go back to the crown.
+function applyLeaderEmoji(emoji) {
+  if (emoji) {
+    document.documentElement.style.setProperty(
+      "--leader-emoji",
+      JSON.stringify(emoji + " ")
+    );
+  } else {
+    document.documentElement.style.removeProperty("--leader-emoji");
+  }
+}
+
+function firstSymbol(text) {
+  text = text.trim();
+  if (window.Intl && Intl.Segmenter) {
+    var first = new Intl.Segmenter().segment(text)[Symbol.iterator]().next();
+    return first.done ? "" : first.value.segment;
+  }
+  return text.slice(0, 8);
+}
+
+(function () {
+  var saved = "";
+  try {
+    saved = localStorage.getItem("leaderEmoji") || "";
+  } catch (e) {}
+  var fromUrl = new URLSearchParams(location.search).get("emoji");
+  if (fromUrl) {
+    saved = firstSymbol(fromUrl);
+    try {
+      localStorage.setItem("leaderEmoji", saved);
+    } catch (e) {}
+  }
+  applyLeaderEmoji(saved);
+
+  document.addEventListener("keydown", function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey || e.key.toLowerCase() !== "e") {
+      return;
+    }
+    e.preventDefault();
+    var entered = prompt("Leader emoji? (leave blank for the crown)");
+    if (entered === null) return;
+    var emoji = firstSymbol(entered);
+    applyLeaderEmoji(emoji);
+    try {
+      if (emoji) localStorage.setItem("leaderEmoji", emoji);
+      else localStorage.removeItem("leaderEmoji");
+    } catch (err) {}
+  });
+})();
