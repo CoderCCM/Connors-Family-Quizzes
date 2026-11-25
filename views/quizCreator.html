@@ -14,37 +14,113 @@
     <script src="/creatorScript.js" defer></script>
   </head>
   <body>
-    <h1 style="width: 100%; text-align: center;" onclick="newQuestion()">
-      Quiz Creator
-    </h1>
-    <div class="row">
-      <div class="column">
-        <label>Quiz Name: <input type="text" id="quizName" /></label
-        ><br /><br />
-        <label
-          >Background Color (hex):
-          <input id="backgroundColor" onkeyup="updateBcColor()" /></label
-        ><br /><br />
-        <label
-          >Background Image (url):
-          <input id="backgroundImage" onkeyup="updateImage()"
-        /></label>
-        <hr />
-        <h3>
-          Questions
-        </h3>
-        <div id="questionsDiv"></div>
-        <button onclick="createQuiz()">
-          CREATE AND PUBLISH QUIZ
+    <header class="top">
+      <div>
+        <p class="brand">Connor&rsquo;s Family Quizzes</p>
+        <h1 onclick="newQuestion()">Quiz Creator</h1>
+      </div>
+      <button type="button" class="linkbtn" id="startOver">Start over</button>
+    </header>
+
+    <main>
+      <p class="draftnote" id="draftNote" hidden>
+        Picked up your unfinished draft from this device.
+      </p>
+
+      <div class="layout">
+        <section class="panel basics">
+          <h2><span class="step">1</span>Name</h2>
+          <label class="field">
+            <span>Quiz name</span>
+            <input
+              type="text"
+              id="quizName"
+              autocomplete="off"
+              placeholder="2026 Thanksgiving Quiz"
+            />
+          </label>
+        </section>
+
+        <section class="panel look">
+          <h2><span class="step">2</span>Look</h2>
+
+          <div class="field">
+            <span>Background color</span>
+            <div class="colorrow">
+              <input
+                type="color"
+                id="colorPicker"
+                value="#24c94d"
+                aria-label="Pick a background color"
+              />
+              <input
+                type="text"
+                id="backgroundColor"
+                autocomplete="off"
+                autocapitalize="off"
+                spellcheck="false"
+                placeholder="#24c94d (blank = green)"
+              />
+            </div>
+            <div class="swatches" id="swatches"></div>
+            <p class="hint" id="colorHint"></p>
+          </div>
+
+          <label class="field">
+            <span>Background image <em>(optional)</em></span>
+            <input
+              type="text"
+              id="backgroundImage"
+              inputmode="url"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              placeholder="https://example.com/pattern.png"
+            />
+            <p class="hint" id="imageStatus"></p>
+          </label>
+        </section>
+
+        <aside class="preview" aria-label="Preview">
+          <h2>Preview</h2>
+          <div class="phone">
+            <div class="screen" id="pvScreen">
+              <div class="pv-card" id="pvCard">
+                <h3 id="pvTitle"></h3>
+                <p class="pv-count" id="pvCount"></p>
+                <p class="pv-question" id="pvQuestion"></p>
+                <ul class="pv-opts" id="pvOptions"></ul>
+                <div class="pv-next">Next</div>
+              </div>
+            </div>
+          </div>
+          <p class="hint">
+            Tap into a question to preview it. The green answer is the correct
+            one.
+          </p>
+        </aside>
+
+        <section class="panel questions">
+          <h2>
+            <span class="step">3</span>Questions
+            <small id="qcount"></small>
+          </h2>
+          <div id="questionsDiv"></div>
+          <button type="button" class="btn secondary wide" id="addQuestion">
+            + Add question
+          </button>
+
+          <div class="problems" id="problems" hidden></div>
+          <div class="result" id="result" hidden></div>
+        </section>
+      </div>
+
+      <div class="publishbar">
+        <span class="summary" id="publishSummary"></span>
+        <button type="button" class="btn primary" id="publishBtn">
+          Publish quiz
         </button>
       </div>
-      <div class="column">
-        <h2>
-          Demo:
-        </h2>
-        <img height="400" width="400" id="demo" />
-        <img height="400" width="300" id="bcColorDemo" />
-      </div>
-    </div>
+    </main>
   </body>
 </html>
