@@ -1,31 +1,195 @@
-@import url("https://fonts.googleapis.com/css?family=Roboto+Condensed&display=swap");
-.column {
-  float: left;
-  width: 50%;
-  text-align: center;
-  align-content: center;
-  font-family: "Roboto Condensed", sans-serif;
-}
-/* Clear floats after the columns */
-.row:after {
-  content: "";
-  display: table;
-  clear: both;
-}
+@import url("https://fonts.googleapis.com/css?family=Roboto+Condensed:400,700&display=swap");
+
 html {
   font-family: "Roboto Condensed", sans-serif;
-  backgound-repeat: repeat !important;
+  background-repeat: repeat !important;
 }
+
+/* The page is exactly one screen tall: header, board, footer. All sizes use
+   vh/vw so it scales to any TV resolution. Padding keeps text off the edges
+   (many TVs crop a little). */
 body {
+  box-sizing: border-box;
+  height: 100vh;
+  margin: 0;
+  padding: 2vh 2vw;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5vh;
   text-align: center;
-  align-content: center;
   overflow: hidden;
 }
 
-p {
-  font-size: x-large;
-  margin: 6px;
+body > br {
+  display: none;
 }
+
+h1,
+h2,
+h3 {
+  margin: 0;
+}
+
+/* ---------- Header + footer (background color is set inline by script) ---------- */
+
+#header {
+  font-size: 5.5vh;
+  line-height: 1.1;
+  padding: 0.2em 1.2em;
+  border-radius: 0.5em;
+}
+
+#updateTime {
+  font-size: 2.2vh;
+  font-weight: normal;
+  padding: 0.2em 1em;
+  border-radius: 0.5em;
+}
+
+/* ---------- Board ---------- */
+
+.row {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  border-radius: 2vh;
+  overflow: hidden;
+}
+
+.column {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 2vh 2vw;
+  display: flex;
+  flex-direction: column;
+  font-family: "Roboto Condensed", sans-serif;
+}
+
+/* left: quiz name + QR code */
+#column1 {
+  flex: 0 0 40%;
+  align-items: center;
+  justify-content: center;
+  gap: 2vh;
+}
+
+#quizName {
+  font-size: 5vh;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+#column1 h2 {
+  font-size: 3.2vh;
+}
+
+#QR {
+  padding: 1.5vh;
+  background: #ffffff;
+  border-radius: 1.5vh;
+}
+
+/* big, crisp QR that scales with the screen */
+#QR img,
+#QR canvas {
+  width: min(36vh, 30vw) !important;
+  height: auto !important;
+  image-rendering: pixelated;
+}
+
+#avgScore {
+  font-size: 4.2vh;
+  font-weight: 700;
+}
+
+/* right: participant list */
+#column2 {
+  flex: 1 1 0;
+  border-left: 0.4vh solid rgba(0, 0, 0, 0.2);
+}
+
+#participantCount {
+  flex: none;
+  font-size: 5vh;
+  margin-bottom: 1vh;
+}
+
+/* names flow top-to-bottom, then into the next column, so more
+   people fit on screen before anything gets cut off */
+#participants {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  column-width: 30vh;
+  column-gap: 2vw;
+  column-fill: auto;
+}
+
+#participants p {
+  margin: 0.4vh 0;
+  padding: 0.15em 0.5em;
+  font-size: 3vh;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  break-inside: avoid;
+  border: 0.2vh solid rgba(0, 0, 0, 0.15);
+  border-radius: 0.4em;
+  transition: background-color 0.6s;
+  animation: enter 0.6s ease-out;
+}
+
+/* the script marks the top scorer(s) with an inline gold background */
+#participants p[style*="gold"] {
+  font-weight: 700;
+  border-color: rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 1.5vh rgba(255, 215, 0, 0.9);
+}
+
+#participants p[style*="gold"]::before {
+  content: "\1F451  ";
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(1.5vh);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #participants p {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* portrait screens: stack the two halves */
+@media (max-aspect-ratio: 1/1) {
+  .row {
+    flex-direction: column;
+  }
+
+  #column1 {
+    flex: 0 0 auto;
+  }
+
+  #column2 {
+    border-left: none;
+    border-top: 0.4vh solid rgba(0, 0, 0, 0.2);
+  }
+
+  #QR img,
+  #QR canvas {
+    width: min(26vh, 55vw) !important;
+  }
+}
+
 .div {
   overflow: hidden;
 }
