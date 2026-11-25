@@ -167,6 +167,161 @@ ul {
   vertical-align: middle;
 }
 
+/* ---------- Progress tracker ---------- */
+
+#progress {
+  margin: 4px 0 12px;
+}
+
+.progressScroll {
+  overflow-x: auto;
+  padding: 10px 8px; /* room for the current hexagon's glow */
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+.progressScroll::-webkit-scrollbar {
+  display: none;
+}
+
+.progressTrack {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: max-content;
+  margin: 0 auto;
+}
+
+/* the line between hexagons; fills in as you move through the quiz */
+.link {
+  flex: 0 0 auto;
+  width: var(--linkW, 12px);
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  transition: background-color 0.3s;
+}
+
+.link.filled {
+  background: #ffffff;
+}
+
+/* overrides the global "button" float/position rules */
+.step {
+  float: none;
+  position: relative;
+  flex: 0 0 auto;
+  width: var(--hexW, 30px);
+  height: calc(var(--hexW, 30px) * 38 / 34);
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.step svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transition: transform 0.25s;
+}
+
+.hexShape {
+  fill: #6b7280; /* gray: not answered yet */
+  stroke: #ffffff;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  transition: fill 0.25s, stroke 0.25s;
+}
+
+.num {
+  fill: #ffffff;
+  font-family: "Roboto Condensed", sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  pointer-events: none;
+}
+
+/* answered = green, skipped = red (gray is the default above) */
+.step.done .hexShape {
+  fill: #15803d;
+}
+
+.step.skipped .hexShape {
+  fill: #dc2626;
+}
+
+/* current question: bigger, with a glow */
+.step.current svg {
+  transform: scale(1.18);
+}
+.step.current .hexShape {
+  stroke-width: 3;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9));
+}
+.step:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.progressCaption {
+  text-align: center;
+  font-size: 0.95em;
+  font-weight: normal;
+  opacity: 0.9;
+}
+
+/* Clear selection: small outlined pill under the answers, hidden until
+   something is selected */
+.clearBtn {
+  float: none;
+  position: relative;
+  display: block;
+  margin: 6px 0 0;
+  padding: 10px 18px;
+  text-indent: 0;
+  font: inherit;
+  font-size: 0.95em;
+  color: #ffffff;
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.clearBtn:active {
+  transform: scale(0.96);
+}
+
+.clearBtn:disabled {
+  visibility: hidden;
+}
+
+/* Submit looks dimmed until every question is answered */
+#next.locked {
+  opacity: 0.55;
+}
+
+#container.results #progress {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step svg,
+  .hexShape,
+  .link {
+    transition: none;
+  }
+  .progressScroll {
+    scroll-behavior: auto;
+  }
+}
+
 /* ---------- Results page answer rows ---------- */
 
 #container h3 {

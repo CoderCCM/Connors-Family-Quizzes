@@ -314,11 +314,162 @@ async function beginQuiz(qName) {
   clearResults(); // never show leftovers from an earlier attempt
   questionCounter = 0;
   selections = [];
+  visited = [];
+  buildProgress();
   document.getElementById("currentQuiz").innerHTML = qName;
   displayNext();
   document.getElementById("quizListOverlay").style.display = "none";
   return true;
 }
+
+// ---------- Progress tracker ----------
+// One hexagon per question on a connecting line:
+//   check = answered, X = skipped (left unanswered), gray = not answered yet.
+// The current question is enlarged and glowing. Tap a hexagon to jump to it.
+var visited = []; // questions that have been shown at least once
+
+function isAnswered(i) {
+  return typeof selections[i] === "number" && !isNaN(selections[i]);
+}
+
+function unansweredList() {
+  var list = [];
+  for (var i = 0; i < questions.length; i++) {
+    if (!isAnswered(i)) list.push(i);
+  }
+  return list;
+}
+
+var HEX_POINTS = "17,1.5 32,10 32,28 17,36.5 2,28 2,10";
+
+function buildProgress() {
+  var $p = $("#progress").empty();
+  var scroller = $('<div class="progressScroll"></div>');
+  var track = $('<div class="progressTrack"></div>');
+  for (var i = 0; i < questions.length; i++) {
+    if (i > 0) track.append('<span class="link"></span>');
+    track.append(
+      '<button type="button" class="step todo" data-index="' +
+        i +
+        '"><svg viewBox="0 0 34 38" aria-hidden="true">' +
+        '<polygon class="hexShape" points="' +
+        HEX_POINTS +
+        '"/>' +
+        '<text class="num" x="17" y="23.6" text-anchor="middle">' +
+        (i + 1) +
+        "</text>" +
+        "</svg></button>"
+    );
+  }
+  scroller.append(track);
+  $p.append(scroller, '<div class="progressCaption"></div>');
+  sizeProgress();
+}
+
+// Shrinks the hexagons to fit the width when there are lots of questions
+// (below a minimum size the row scrolls sideways instead)
+function sizeProgress() {
+  var n = questions.length;
+  var el = document.getElementById("progress");
+  if (!n || !el) return;
+  var per = (el.clientWidth || 300) / n;
+  el.style.setProperty(
+    "--hexW",
+    Math.max(22, Math.min(36, Math.floor(per * 0.7))) + "px"
+  );
+  el.style.setProperty(
+    "--linkW",
+    Math.max(4, Math.min(18, Math.floor(per * 0.3))) + "px"
+  );
+}
+window.addEventListener("resize", sizeProgress);
+
+function refreshProgress(centerCurrent) {
+  var n = questions.length;
+  var answered = 0;
+  $("#progress .step").each(function (i) {
+    var done = isAnswered(i);
+    if (done) answered++;
+    var state = done
+      ? "done"
+      : visited[i] && i !== questionCounter
+      ? "skipped"
+      : "todo";
+    var label =
+      "Question " +
+      (i + 1) +
+      ": " +
+      (state === "done"
+        ? "answered"
+        : state === "skipped"
+        ? "skipped, still unanswered"
+        : "not answered yet");
+    $(this)
+      .removeClass("done skipped todo")
+      .addClass(state)
+      .toggleClass("current", i === questionCounter)
+      .attr("aria-label", label)
+      .attr("title", label);
+    if (i === questionCounter) this.setAttribute("aria-current", "step");
+    else this.removeAttribute("aria-current");
+  });
+  $("#progress .link").each(function (i) {
+    $(this).toggleClass("filled", i < questionCounter);
+  });
+  $("#progress .progressCaption").text(
+    answered === n
+      ? "All answered \u2014 ready to submit"
+      : answered + " of " + n + " answered"
+  );
+  // Submit looks dimmed until every question has an answer
+  $("#next").toggleClass("locked", questionCounter === n - 1 && answered < n);
+
+  if (centerCurrent) {
+    var scroller = document.querySelector("#progress .progressScroll");
+    var cur = document.querySelector("#progress .step.current");
+    if (scroller && cur) {
+      scroller.scrollLeft =
+        cur.offsetLeft - (scroller.clientWidth - cur.offsetWidth) / 2;
+    }
+  }
+}
+
+// Tap a hexagon to jump to that question
+$("#progress").on("click", ".step", function (e) {
+  e.preventDefault();
+  if (quiz.is(":animated")) {
+    return false;
+  }
+  var target = +$(this).data("index");
+  if (target === questionCounter) return false;
+  choose();
+  questionCounter = target;
+  displayNext();
+});
+
+// "Clear selection" only shows while the current question has an answer
+function updateClearButton() {
+  $(".clearBtn").prop("disabled", !isAnswered(questionCounter));
+}
+
+// Mark a question answered the moment a choice is picked
+quiz.on("change", 'input[name="answer"]', function () {
+  selections[questionCounter] = +this.value;
+  refreshProgress(false);
+  updateClearButton();
+});
+
+// Put the current question back to unanswered
+quiz.on("click", ".clearBtn", function (e) {
+  e.preventDefault();
+  if (quiz.is(":animated")) {
+    return false;
+  }
+  $('input[name="answer"]').prop("checked", false);
+  selections[questionCounter] = NaN;
+  refreshProgress(false);
+  updateClearButton();
+});
 
 // Click handler for the 'next' button
 $("#next").on("click", function (e) {
@@ -330,11 +481,30 @@ $("#next").on("click", function (e) {
   }
   choose();
 
-  // If no user selection, progress is stopped
-  if (isNaN(selections[questionCounter])) {
-    alert("Please make a selection!");
-  } else {
+  // Skipping ahead without answering is fine...
+  if (questionCounter < questions.length - 1) {
     questionCounter++;
+    displayNext();
+    return;
+  }
+
+  // ...but submitting needs every question answered
+  var missing = unansweredList();
+  if (missing.length === 0) {
+    questionCounter++;
+    displayNext();
+    return;
+  }
+  alert(
+    "Please answer every question before submitting.\nStill unanswered: " +
+      missing
+        .map(function (i) {
+          return i + 1;
+        })
+        .join(", ")
+  );
+  if (missing[0] !== questionCounter) {
+    questionCounter = missing[0];
     displayNext();
   }
 });
@@ -360,6 +530,7 @@ $("#start").on("click", function (e) {
   }
   questionCounter = 0;
   selections = [];
+  visited = [];
   displayNext();
   $("#start").hide();
 });
@@ -400,6 +571,10 @@ function createQuestionElement(index) {
   var radioButtons = createRadios(index);
   qElement.append(radioButtons);
 
+  qElement.append(
+    '<button type="button" class="clearBtn" disabled>Clear selection</button>'
+  );
+
   return qElement;
 }
 
@@ -429,6 +604,11 @@ function choose() {
 
 // Displays next requested element
 function displayNext() {
+  // update the tracker right away so it responds instantly
+  if (questionCounter < questions.length) {
+    visited[questionCounter] = true;
+    refreshProgress(true);
+  }
   quiz.fadeOut(function () {
     $("#question").remove();
 
@@ -445,13 +625,11 @@ function displayNext() {
         );
       }
 
-      // Controls display of 'prev' button
-      if (questionCounter === 1) {
-        $("#prev").show();
-      } else if (questionCounter === 0) {
-        $("#prev").hide();
-        $("#next").show();
-      }
+      updateClearButton();
+
+      // 'prev' is available on every question except the first
+      $("#prev").toggle(questionCounter > 0);
+      $("#next").show();
     } else {
       var scoreElem = displayScore();
       quiz.append(scoreElem).fadeIn();
