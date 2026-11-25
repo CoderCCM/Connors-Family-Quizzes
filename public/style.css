@@ -271,12 +271,6 @@ ul {
   overflow-wrap: anywhere;
 }
 
-/* italic letters lean right, so give the name room before the "!" */
-#welcomeBack em {
-  font-style: italic;
-  padding: 0 0.12em 0 0.04em;
-}
-
 #welcomeBack:empty {
   display: none;
 }
