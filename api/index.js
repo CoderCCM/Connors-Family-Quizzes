@@ -78,11 +78,11 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../views/index.html"));
 });
 
-app.get("/5", requirePassword("QUIZ_CREATOR_PASSWORD"), (req, res) => {
+app.get("/create", requirePassword("QUIZ_CREATOR_PASSWORD"), (req, res) => {
   res.sendFile(path.join(__dirname, "../views/quizCreator.html"));
 });
 
-app.get("/437143714371", requirePassword("ADMIN_PASSWORD"), (req, res) => {
+app.get("/admin", requirePassword("ADMIN_PASSWORD"), (req, res) => {
   res.sendFile(path.join(__dirname, "../views/adminPortal.html"));
 });
 
