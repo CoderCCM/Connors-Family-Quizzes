@@ -290,8 +290,8 @@ function createRadios(index) {
   actualChoices = partsOfQuestion[1].split("{}|");
   for (var i = 0; i < actualChoices.length; i++) {
     item = $("<li>");
-    input = '<input type="radio" name="answer" value=' + i + " />";
-    input += actualChoices[i];
+    input = '<label><input type="radio" name="answer" value=' + i + " />";
+    input += actualChoices[i] + "</label>";
     item.append(input);
     radioList.append(item);
   }
