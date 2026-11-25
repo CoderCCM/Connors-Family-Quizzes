@@ -409,20 +409,21 @@ $("#progress").on("click", ".step", function (e) {
   displayNext();
 });
 
-// "Clear selection" only shows while the current question has an answer
+// "Clear" only shows while the current question has an answer
 function updateClearButton() {
-  $(".clearBtn").prop("disabled", !isAnswered(questionCounter));
+  $("#clear").toggleClass("off", !isAnswered(questionCounter));
 }
 
 // Mark a question answered the moment a choice is picked
 quiz.on("change", 'input[name="answer"]', function () {
-  selections[questionCounter] = +this.value;
+  var qi = +$(this).closest("#question").attr("data-index");
+  selections[qi] = +this.value;
   refreshProgress();
   updateClearButton();
 });
 
 // Put the current question back to unanswered
-quiz.on("click", ".clearBtn", function (e) {
+$("#clear").on("click", function (e) {
   e.preventDefault();
   if (quiz.is(":animated")) {
     return false;
@@ -510,6 +511,9 @@ function createQuestionElement(index) {
   var qElement = $("<div>", {
     id: "question",
   });
+  // remember which question this element is, so an answer can never be
+  // filed under a different question (e.g. a tap during the fade animation)
+  qElement.attr("data-index", index);
 
   var header = $(
     "<h2>Question " +
@@ -531,10 +535,6 @@ function createQuestionElement(index) {
 
   var radioButtons = createRadios(index);
   qElement.append(radioButtons);
-
-  qElement.append(
-    '<button type="button" class="clearBtn" disabled>Clear selection</button>'
-  );
 
   return qElement;
 }
@@ -568,6 +568,7 @@ function displayNext() {
   // update the tracker right away so it responds instantly
   if (questionCounter < questions.length) {
     refreshProgress();
+    updateClearButton();
   }
   quiz.fadeOut(function () {
     $("#question").remove();
