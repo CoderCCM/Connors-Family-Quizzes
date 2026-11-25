@@ -271,3 +271,41 @@ function firstSymbol(text) {
     } catch (err) {}
   });
 })();
+
+// ---------- Keep the screen awake ----------
+// Uses the Screen Wake Lock API (Chrome, Edge, Safari 16.4+, Firefox 126+;
+// needs https). The browser drops the lock whenever the tab is hidden, so it
+// is requested again when the tab comes back. If the browser wants a tap
+// first, the first click/touch/key press on the page re-tries it.
+(function () {
+  var wakeLock = null;
+
+  async function requestWakeLock() {
+    if (!("wakeLock" in navigator)) {
+      console.log("Wake Lock API not supported in this browser.");
+      return;
+    }
+    if (document.visibilityState !== "visible") return;
+    if (wakeLock && !wakeLock.released) return;
+    try {
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener("release", function () {
+        wakeLock = null;
+      });
+      console.log("Screen wake lock active.");
+    } catch (err) {
+      console.log("Wake lock request failed:", err);
+    }
+  }
+
+  requestWakeLock();
+
+  document.addEventListener("visibilitychange", requestWakeLock);
+
+  ["click", "touchstart", "keydown"].forEach(function (evt) {
+    document.addEventListener(evt, requestWakeLock, { passive: true });
+  });
+
+  // safety net: if the lock was lost for any other reason, get it back
+  setInterval(requestWakeLock, 60000);
+})();
