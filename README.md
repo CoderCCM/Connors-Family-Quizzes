@@ -2,7 +2,7 @@
 
 A quiz app built on Node and Express with a live scoreboard and quiz analytics. Backed by Firebase Realtime Database and deployed serverlessly on Vercel.
 
-**Live:** [connors-family-quizzes.vercel.app](https://connors-family-quizzes.vercel.app)
+**Live:** [quiz.connormagnuson.com](https://quiz.connormagnuson.com)
 
 ---
 
