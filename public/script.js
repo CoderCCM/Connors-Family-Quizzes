@@ -6,7 +6,12 @@ function showWelcomeBack() {
   var el = document.getElementById("welcomeBack");
   if (!el) return;
   var saved = getSavedName();
-  el.textContent = saved ? "Welcome back, " + saved + "!" : "";
+  el.textContent = "";
+  if (saved) {
+    var nameEl = document.createElement("em");
+    nameEl.textContent = saved; // textContent keeps odd characters safe
+    el.append("Welcome back, ", nameEl, "!");
+  }
 }
 
 async function blah() {
