@@ -30,15 +30,6 @@ async function blah() {
     }
     button.className = "centerButtons";
     document.getElementById("quizList").appendChild(button);
-    document
-      .getElementById("quizList")
-      .appendChild(document.createElement("br"));
-    document
-      .getElementById("quizList")
-      .appendChild(document.createElement("br"));
-    document
-      .getElementById("quizList")
-      .appendChild(document.createElement("br"));
   });
 
   //get url param qNameAutoOpen
