@@ -46,6 +46,12 @@ var quiz = $("#quiz"); //Quiz div object
 // Display initial question
 
 async function openScorePage(quizName) {
+  participantName = participantName || localStorage.getItem("name");
+  if (!participantName || !participantName.trim()) {
+    alert("Your saved name is missing. Start the quiz again to enter your name.");
+    return;
+  }
+
   document.getElementById("currentQuiz").innerHTML = quizName;
   var response = await fetch("/requestQuestions", {
     method: "POST",
@@ -67,7 +73,7 @@ async function openScorePage(quizName) {
     method: "POST",
     body: JSON.stringify({
       quizName: quizName,
-      participantName: localStorage.getItem("name"),
+      participantName: participantName,
     }),
     headers: { "Content-Type": "application/json" },
   });
@@ -86,7 +92,7 @@ async function openScorePage(quizName) {
   c.append(h2);
 
   var h1 = document.createElement("h1");
-  h1.innerHTML = localStorage.getItem("name") + "'s Quiz:";
+  h1.innerHTML = participantName + "'s Quiz:";
   c.append(h1);
   var correctQuestionCounter = 0;
   actualQuestions.forEach(function (question, indexer) {
@@ -120,7 +126,7 @@ async function openScorePage(quizName) {
     });
   });
   document.getElementById("scoreH2").innerHTML =
-    localStorage.getItem("name") +
+    participantName +
     "'s score: " +
     String(
       correctQuestionCounter +
@@ -139,36 +145,38 @@ async function openScorePage(quizName) {
 
 function promptForName() {
   var localName;
-  while (!localName) {
+  while (!localName || !localName.trim()) {
     localName = prompt(
       "What is your name?\nNOTE: This cannot be changed, please enter your real name."
     );
   }
-  name = localName;
+  return localName.trim();
 }
 
-var quizName, name;
+var quizName, participantName;
 async function beginQuiz(qName) {
-  if (!localStorage.getItem("name") || localStorage.getItem("name") == "") {
+  participantName = localStorage.getItem("name");
+  if (!participantName || !participantName.trim()) {
     var allowedToPass = false;
     while (!allowedToPass) {
-      promptForName();
+      var enteredName = promptForName();
       var response = await fetch("/requestIfNameAlreadyExists", {
         method: "POST",
-        body: JSON.stringify({ participantName: name, quiz: qName }),
+        body: JSON.stringify({ participantName: enteredName, quiz: qName }),
         headers: { "Content-Type": "application/json" },
       });
       var data = await response.json();
       if (data.alreadyExists == false) {
         allowedToPass = true;
-        localStorage.setItem("name", name);
+        participantName = enteredName;
+        localStorage.setItem("name", participantName);
       } else {
         alert("Sorry, that name is already in our system. Please try another.");
       }
     }
   } else {
-    name = localStorage.getItem("name");
-    alert("Welcome back, " + name + "!");
+    participantName = participantName.trim();
+    alert("Welcome back, " + participantName + "!");
   }
 
   var response = await fetch("/requestQuestions", {
@@ -335,17 +343,37 @@ async function displayScore() {
   var c = document.getElementById("container");
 
   var score = $("<h2>", { id: "question" });
-  localStorage.setItem(quizName + "-Taken", String(new Date().getTime()));
-  var response = await fetch("/submitChoicesByName", {
-    method: "POST",
-    body: JSON.stringify({
-      quizName: quizName,
-      participantName: localStorage.getItem("name"),
-      choices: selections,
-    }),
-    headers: { "Content-Type": "application/json" },
-  });
-  var data = await response.json();
+  if (!participantName || !participantName.trim()) {
+    alert("Your name is missing, so your results could not be reported.");
+    return score;
+  }
+
+  var reportSucceeded = false;
+  try {
+    var response = await fetch("/submitChoicesByName", {
+      method: "POST",
+      body: JSON.stringify({
+        quizName: quizName,
+        participantName: participantName,
+        choices: selections,
+      }),
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!response.ok) {
+      throw new Error(`Submission failed with status ${response.status}`);
+    }
+    var data = await response.json();
+    if (!data.success) {
+      throw new Error("Submission was not accepted");
+    }
+    reportSucceeded = true;
+  } catch (error) {
+    console.error("submitChoicesByName error:", error);
+    alert("Your results could not be reported. Please check your connection and try again.");
+  }
+  if (reportSucceeded) {
+    localStorage.setItem(quizName + "-Taken", String(new Date().getTime()));
+  }
 
   var numCorrect = 0;
   for (var i = 0; i < selections.length; i++) {
@@ -358,7 +386,7 @@ async function displayScore() {
   }
   var h2 = document.createElement("h2");
   h2.innerHTML =
-    localStorage.getItem("name") +
+    participantName +
     "'s score: " +
     numCorrect +
     "/" +
@@ -373,7 +401,7 @@ async function displayScore() {
   c.append(h2);
 
   var h1 = document.createElement("h1");
-  h1.innerHTML = localStorage.getItem("name") + "'s Quiz:";
+  h1.innerHTML = participantName + "'s Quiz:";
   c.append(h1);
   questions.forEach(function (question, indexer) {
     var partsOfQuestion = [];

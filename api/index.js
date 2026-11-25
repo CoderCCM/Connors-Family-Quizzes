@@ -145,9 +145,15 @@ app.post("/requestChoicesByName", jsonParser, async (req, res) => {
 app.post("/submitChoicesByName", jsonParser, async (req, res) => {
   try {
     const { quizName, participantName, choices } = req.body;
+    const normalizedParticipantName =
+      typeof participantName === "string" ? participantName.trim() : "";
+
+    if (!normalizedParticipantName) {
+      return res.status(400).json({ error: "participantName is required" });
+    }
 
     await db
-      .ref(`${quizName} - ${participantName} - Choices`)
+      .ref(`${quizName} - ${normalizedParticipantName} - Choices`)
       .set(choices);
 
     const snapshot = await db
@@ -156,8 +162,8 @@ app.post("/submitChoicesByName", jsonParser, async (req, res) => {
 
     let list = snapshot.val() || [];
 
-    if (!list.includes(participantName)) {
-      list.push(participantName);
+    if (!list.includes(normalizedParticipantName)) {
+      list.push(normalizedParticipantName);
       await db.ref(`${quizName} - QuizTakers`).set(list);
     }
 
