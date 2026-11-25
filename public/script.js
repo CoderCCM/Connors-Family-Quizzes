@@ -1,6 +1,16 @@
 blah();
 var questions = [];
+
+// "Welcome back, NAME" under the Quiz List header, if this device knows them
+function showWelcomeBack() {
+  var el = document.getElementById("welcomeBack");
+  if (!el) return;
+  var saved = getSavedName();
+  el.textContent = saved ? "Welcome back, " + saved + "!" : "";
+}
+
 async function blah() {
+  showWelcomeBack();
   var response = await fetch("/requestQuizList", {
     method: "POST",
     body: JSON.stringify({ a: "A" }),
