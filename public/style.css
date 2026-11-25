@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Roboto+Condensed:wght@400;700&display=swap");
 
 html {
   font-family: "Roboto Condensed", sans-serif;
@@ -167,12 +167,9 @@ ul {
   vertical-align: middle;
 }
 
-/* ---------- Results page answer rows ----------
-   (script.js currently calls document.createElement(h3) with no quotes,
-   which makes an <undefined> element, so style both.) */
+/* ---------- Results page answer rows ---------- */
 
-#container h3,
-#container undefined {
+#container h3 {
   display: block;
   margin: 8px 0;
   padding: 12px;
@@ -183,8 +180,7 @@ ul {
   border-radius: 10px;
 }
 
-#container h3 + br,
-#container undefined + br {
+#container h3 + br {
   display: none;
 }
 
@@ -193,9 +189,51 @@ ul {
 #container [style*="lightgreen"] {
   color: #064d1a;
 }
-#container h3[style*="red"],
-#container undefined[style*="red"] {
+#container h3[style*="red"] {
   color: #ffffff;
+}
+
+/* ---------- Results header ---------- */
+
+/* trim the empty space above the results (spacer div + <br>) */
+#container.results #title + br,
+#container.results #quiz + div {
+  display: none;
+}
+
+#container.results > h1 {
+  font-size: 1.5em;
+  margin: 6px 0 8px;
+}
+
+/* score, like a grade written in red pen */
+.gradeScore {
+  text-align: center;
+  margin: 0 0 2px;
+}
+
+.gradeScore span {
+  display: inline-block;
+  font-family: "Caveat", "Segoe Script", "Bradley Hand", cursive;
+  font-size: 2.6em;
+  font-weight: 700;
+  line-height: 1;
+  color: #d7261e;
+  padding: 4px 24px 8px;
+  background: rgba(255, 255, 255, 0.9); /* "paper" so red stays readable on any quiz color */
+  border: 3px solid #d7261e;
+  border-radius: 52% 48% 50% 46% / 58% 54% 46% 44%; /* hand-drawn circle */
+  transform: rotate(-4deg);
+  text-shadow: 0 0 1px rgba(215, 38, 30, 0.5);
+}
+
+/* attempted date: small, plain, clearly secondary */
+.attempted {
+  text-align: center;
+  font-size: 0.95em;
+  font-weight: normal;
+  opacity: 0.85;
+  margin: 8px 0 14px;
 }
 
 /* ---------- Quiz list overlay ---------- */

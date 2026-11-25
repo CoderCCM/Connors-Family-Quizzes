@@ -66,6 +66,38 @@ var selections = []; //Array containing user choices
 var quiz = $("#quiz"); //Quiz div object
 // Display initial question
 
+// Builds: [NAME]'s Quiz: -> red-pen score -> attempted date.
+// Returns the score element so the caller can fill in the grade text.
+function addResultsHeader(c, name, quizNameForDate) {
+  c.classList.add("results");
+
+  var h1 = document.createElement("h1");
+  h1.textContent = name + "'s Quiz:";
+  c.append(h1);
+
+  var scoreWrap = document.createElement("div");
+  scoreWrap.className = "gradeScore";
+  var scoreEl = document.createElement("span");
+  scoreWrap.append(scoreEl);
+  c.append(scoreWrap);
+
+  var taken = new Date(
+    Number(localStorage.getItem(quizNameForDate + "-Taken"))
+  );
+  // if nothing was saved (e.g. the report failed), fall back to now
+  if (isNaN(taken.getTime()) || taken.getTime() === 0) taken = new Date();
+  var attempted = document.createElement("div");
+  attempted.className = "attempted";
+  attempted.textContent =
+    "Attempted: " +
+    taken.toLocaleDateString() +
+    " " +
+    taken.toLocaleTimeString();
+  c.append(attempted);
+
+  return scoreEl;
+}
+
 async function openScorePage(quizName) {
   participantName = isValidName(participantName)
     ? participantName.trim()
@@ -106,17 +138,9 @@ async function openScorePage(quizName) {
   document.getElementById("next").style.display = "none";
   var container = document.getElementById("container");
   var c = document.getElementById("container");
-  var h2 = document.createElement("h2");
-  h2.id = "scoreH2";
-  container.append(h2);
-  var h2 = document.createElement("h2");
-  h2.innerHTML =
-    "Attempted: " + new Date(Number(localStorage.getItem(quizName + "-Taken"))).toLocaleDateString() + " " + new Date(Number(localStorage.getItem(quizName + "-Taken"))).toLocaleTimeString();
-  c.append(h2);
 
-  var h1 = document.createElement("h1");
-  h1.innerHTML = participantName + "'s Quiz:";
-  c.append(h1);
+  var scoreEl = addResultsHeader(c, participantName, quizName);
+
   var correctQuestionCounter = 0;
   actualQuestions.forEach(function (question, indexer) {
     var parts = [];
@@ -131,7 +155,7 @@ async function openScorePage(quizName) {
     c.append(h2);
     actualChoices.forEach(function (choice, index) {
       console.log(choice);
-      var h3 = document.createElement(h3);
+      var h3 = document.createElement("h3");
       if (index == actualCorrectAnswer) {
         h3.style.backgroundColor = "lightgreen";
       }
@@ -148,21 +172,13 @@ async function openScorePage(quizName) {
       c.append(h3, document.createElement("BR"));
     });
   });
-  document.getElementById("scoreH2").innerHTML =
-    participantName +
-    "'s score: " +
-    String(
-      correctQuestionCounter +
-        "/" +
-        actualQuestions.length +
-        " " +
-        String(
-          Math.floor(
-            Number(correctQuestionCounter / actualQuestions.length) * 100
-          )
-        ) +
-        "%"
-    );
+  scoreEl.textContent =
+    correctQuestionCounter +
+    "/" +
+    actualQuestions.length +
+    " " +
+    Math.floor((correctQuestionCounter / actualQuestions.length) * 100) +
+    "%";
   document.getElementById("quizListOverlay").style.display = "none";
 }
 
@@ -453,25 +469,16 @@ async function displayScore() {
       numCorrect++;
     }
   }
-  var h2 = document.createElement("h2");
-  h2.innerHTML =
-    participantName +
-    "'s score: " +
+
+  var scoreEl = addResultsHeader(c, participantName, quizName);
+  scoreEl.textContent =
     numCorrect +
     "/" +
     questions.length +
     " " +
-    String(Math.floor(Number(numCorrect / questions.length) * 100)) +
-    "%</h2>";
-  c.append(h2);
-  var h2 = document.createElement("h2");
-  h2.innerHTML =
-    "Attempted: " + new Date(Number(localStorage.getItem(quizName + "-Taken"))).toLocaleDateString() + " " + new Date(Number(localStorage.getItem(quizName + "-Taken"))).toLocaleTimeString();
-  c.append(h2);
+    Math.floor((numCorrect / questions.length) * 100) +
+    "%";
 
-  var h1 = document.createElement("h1");
-  h1.innerHTML = participantName + "'s Quiz:";
-  c.append(h1);
   questions.forEach(function (question, indexer) {
     var partsOfQuestion = [];
     partsOfQuestion = question.split("!@#$%^&*()");
@@ -483,7 +490,7 @@ async function displayScore() {
     c.append(h2);
     actualChoices.forEach(function (choice, index) {
       console.log(choice);
-      var h3 = document.createElement(h3);
+      var h3 = document.createElement("h3");
       if (index == partsOfQuestion[2]) {
         h3.style.backgroundColor = "lightgreen";
       }
