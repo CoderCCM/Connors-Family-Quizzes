@@ -18,14 +18,30 @@ async function blah() {
       button.onclick = function () {
         button.disabled = "true";
         button.innerHTML = "LOADING QUIZ";
-        openScorePage(item);
+        openScorePage(item)
+          .then(function (ok) {
+            if (ok === false) restoreButton(button, item + " - View Score");
+          })
+          .catch(function (error) {
+            console.error("openScorePage error:", error);
+            alert("Something went wrong loading your score. Please try again.");
+            restoreButton(button, item + " - View Score");
+          });
       };
     } else {
       button.style.backgroundColor = "lightgreen";
       button.onclick = function () {
         button.disabled = "true";
         button.innerHTML = "LOADING QUIZ";
-        beginQuiz(item);
+        beginQuiz(item)
+          .then(function (started) {
+            if (!started) restoreButton(button, item);
+          })
+          .catch(function (error) {
+            console.error("beginQuiz error:", error);
+            alert("Something went wrong loading the quiz. Please try again.");
+            restoreButton(button, item);
+          });
       };
     }
     button.className = "centerButtons";
@@ -40,16 +56,23 @@ async function blah() {
   }
 }
 
+function restoreButton(button, label) {
+  button.disabled = false;
+  button.innerHTML = label;
+}
+
 var questionCounter = 0; //Tracks question number
 var selections = []; //Array containing user choices
 var quiz = $("#quiz"); //Quiz div object
 // Display initial question
 
 async function openScorePage(quizName) {
-  participantName = participantName || localStorage.getItem("name");
-  if (!participantName || !participantName.trim()) {
+  participantName = isValidName(participantName)
+    ? participantName.trim()
+    : getSavedName();
+  if (!participantName) {
     alert("Your saved name is missing. Start the quiz again to enter your name.");
-    return;
+    return false;
   }
 
   document.getElementById("currentQuiz").innerHTML = quizName;
@@ -143,39 +166,74 @@ async function openScorePage(quizName) {
   document.getElementById("quizListOverlay").style.display = "none";
 }
 
+// A usable name is a non-blank string that isn't a leftover "null"/"undefined"
+function isValidName(name) {
+  if (typeof name !== "string") return false;
+  var n = name.trim().toLowerCase();
+  return n !== "" && n !== "null" && n !== "undefined";
+}
+
+// The name saved on this device, or null (junk values are cleared)
+function getSavedName() {
+  var saved = localStorage.getItem("name");
+  if (isValidName(saved)) return saved.trim();
+  if (saved !== null) localStorage.removeItem("name");
+  return null;
+}
+
+// Returns a valid name, or null if the person cancels (or prompts are blocked)
 function promptForName() {
-  var localName;
-  while (!localName || !localName.trim()) {
-    localName = prompt(
+  for (var attempt = 0; attempt < 5; attempt++) {
+    var entered = prompt(
       "What is your name?\nNOTE: This cannot be changed, please enter your real name."
     );
+    if (typeof entered !== "string") return null;
+    if (isValidName(entered)) return entered.trim();
   }
-  return localName.trim();
+  return null;
 }
 
 var quizName, participantName;
+// Resolves true once the quiz is on screen, false if it didn't start.
+// Nothing is shown until a valid name is in hand, so a question is never
+// served without a name to submit it under.
 async function beginQuiz(qName) {
-  participantName = localStorage.getItem("name");
-  if (!participantName || !participantName.trim()) {
-    var allowedToPass = false;
-    while (!allowedToPass) {
+  participantName = getSavedName();
+  if (!participantName) {
+    while (true) {
       var enteredName = promptForName();
-      var response = await fetch("/requestIfNameAlreadyExists", {
-        method: "POST",
-        body: JSON.stringify({ participantName: enteredName, quiz: qName }),
-        headers: { "Content-Type": "application/json" },
-      });
-      var data = await response.json();
-      if (data.alreadyExists == false) {
-        allowedToPass = true;
+      if (!enteredName) {
+        participantName = null;
+        alert("A name is needed to start the quiz.");
+        return false;
+      }
+      var nameData;
+      try {
+        var nameResponse = await fetch("/requestIfNameAlreadyExists", {
+          method: "POST",
+          body: JSON.stringify({ participantName: enteredName, quiz: qName }),
+          headers: { "Content-Type": "application/json" },
+        });
+        nameData = await nameResponse.json();
+      } catch (error) {
+        console.error("requestIfNameAlreadyExists error:", error);
+        participantName = null;
+        alert("Couldn't check that name. Please check your connection and try again.");
+        return false;
+      }
+      if (nameData.alreadyExists == false) {
         participantName = enteredName;
         localStorage.setItem("name", participantName);
-      } else {
+        break;
+      } else if (nameData.alreadyExists) {
         alert("Sorry, that name is already in our system. Please try another.");
+      } else {
+        participantName = null;
+        alert("Couldn't check that name. Please try again.");
+        return false;
       }
     }
   } else {
-    participantName = participantName.trim();
     alert("Welcome back, " + participantName + "!");
   }
 
@@ -185,6 +243,16 @@ async function beginQuiz(qName) {
     headers: { "Content-Type": "application/json" },
   });
   var data = await response.json();
+  if (
+    !isValidName(participantName) ||
+    !data ||
+    !Array.isArray(data.questions) ||
+    data.questions.length === 0
+  ) {
+    participantName = null;
+    alert("Couldn't load this quiz. Please try again.");
+    return false;
+  }
   questions = data.questions;
   document.body.style.backgroundImage = "url(" + data.backgroundImage + ")";
   document.getElementById("container").style.backgroundColor =
@@ -194,6 +262,7 @@ async function beginQuiz(qName) {
   document.getElementById("currentQuiz").innerHTML = qName;
   displayNext();
   document.getElementById("quizListOverlay").style.display = "none";
+  return true;
 }
 
 // Click handler for the 'next' button
@@ -343,7 +412,7 @@ async function displayScore() {
   var c = document.getElementById("container");
 
   var score = $("<h2>", { id: "question" });
-  if (!participantName || !participantName.trim()) {
+  if (!isValidName(participantName) || !quizName) {
     alert("Your name is missing, so your results could not be reported.");
     return score;
   }
