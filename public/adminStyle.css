@@ -1,40 +1,304 @@
-@import url("https://fonts.googleapis.com/css?family=Roboto+Condensed&display=swap");
+@import url("https://fonts.googleapis.com/css?family=Roboto+Condensed:400,700&display=swap");
+
+html {
+  font-family: "Roboto Condensed", sans-serif;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  box-sizing: border-box;
+  min-height: 100vh;
+  margin: 0;
+  padding: 8px 16px 40px;
+  text-align: center;
+  background-color: #f4f6fb;
+}
+
+/* ---------- Quiz list (buttons are added straight into <body>) ---------- */
+
+body > h1 {
+  margin: 22px 0 6px;
+  font-size: 2em;
+}
+
+body > h3 {
+  margin: 0 0 18px;
+  font-weight: normal;
+  opacity: 0.7;
+}
+
+body > br {
+  display: none;
+}
+
+body > button {
+  display: block;
+  width: min(420px, 100%);
+  margin: 12px auto;
+  padding: 16px 20px;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 1.4em;
+  font-weight: bold;
+  color: #1d2433;
+  background-color: #e3e6ee;
+  border: none;
+  border-radius: 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  touch-action: manipulation;
+  overflow-wrap: anywhere;
+}
+
+body > button:active {
+  transform: scale(0.98);
+}
+
+/* ---------- Overlays ---------- */
+
 .overlay {
   position: fixed; /* Sit on top of the page content */
-  display: none; /* Hidden by default */
+  display: none; /* Hidden by default (the script switches it to block) */
+  box-sizing: border-box;
   width: 100%; /* Full width (cover the whole page) */
   height: 100%; /* Full height (cover the whole page) */
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   background-color: white;
   z-index: 2; /* Specify a stack order in case you're using a different order for other elements */
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  font-family: "Roboto Condensed", sans-serif;
+}
+
+.overlay button {
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 10px 18px;
+  font-family: inherit;
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #1d2433;
+  background-color: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
   cursor: pointer;
-  overflow: scroll;
-  font-family: "Roboto Condensed", sans-serif;
+  touch-action: manipulation;
 }
+
+.overlay button:active {
+  transform: scale(0.97);
+}
+
+h3:empty {
+  display: none;
+}
+
+/* ---------- Quiz overview: participants (left) + answers (right) ---------- */
+
+#quizOverviewOverlay {
+  overflow-y: hidden;
+}
+
+.row {
+  display: flex;
+  height: 100%;
+}
+
 .column {
-  float: left;
-  width: 50%;
+  box-sizing: border-box;
+  min-width: 0;
+  height: 100%;
+  padding: 2vh 2vw;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   text-align: center;
-  align-content: center;
-  font-family: "Roboto Condensed", sans-serif;
-  overflow: scroll;
-}
-/* Clear floats after the columns */
-.row:after {
-  content: "";
-  display: table;
-  clear: both;
-}
-html {
   font-family: "Roboto Condensed", sans-serif;
 }
+
+#column1 {
+  flex: 0 0 38%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+#column1 h1 {
+  margin: 0;
+  font-size: 1.8em;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+#backToQuizzes {
+  align-self: flex-start;
+}
+
+#participantCount {
+  margin: 0;
+  font-size: 1.2em;
+  font-weight: bold;
+}
+
+/* action buttons sit above the (possibly long) participant list */
+#participants {
+  order: 2;
+  width: 100%;
+  padding: 0 1.6vh 1.6vh; /* room for the gold glow so it isn't clipped */
+  box-sizing: border-box;
+}
+
+#participants p {
+  margin: 8px 0;
+  padding: 12px 14px;
+  font-size: 1.2em;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  background-color: rgba(255, 255, 255, 0.45); /* top scorers get gold inline */
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+#participants p:active {
+  transform: scale(0.98);
+}
+
+#participants p[style*="gold"] {
+  font-weight: bold;
+  border-color: rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.9);
+}
+
+#participants p[style*="gold"]::before {
+  content: "\1F451  ";
+}
+
+#questionOverviewOpener,
+#questionLiveScoreboard {
+  width: min(320px, 100%);
+}
+
+#column2 {
+  flex: 1 1 0;
+  border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+#column2:empty::before {
+  content: "Pick a participant to see their answers";
+  display: block;
+  margin-top: 20vh;
+  font-size: 1.4em;
+  opacity: 0.6;
+}
+
+/* ---------- Answer detail + question overview text ---------- */
+
+#column2 h1,
+#column2 h2,
+#column2 h3,
+#questionsDiv h2,
+#questionsDiv h3 {
+  margin: 8px 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+#column2 h1 {
+  text-align: center;
+  font-size: 1.6em;
+}
+
+#column2 h2,
+#questionsDiv h2 {
+  font-size: 1.3em;
+  line-height: 1.2;
+}
+
+#column2 h3,
+#questionsDiv h3 {
+  font-size: 1.05em;
+  line-height: 1.25;
+  font-weight: normal;
+}
+
+/* a wrong answer is set to red inline; keep it readable */
+#column2 h3[style*="red"] {
+  color: #ffffff;
+}
+
+/* ---------- Question overview overlay ---------- */
+
 #questionOverviewOverlay {
   z-index: 3;
+  padding: 12px 16px 40px;
   text-align: center;
 }
-body {
-  text-align: center;
+
+/* keep the Back button reachable while scrolling a long quiz */
+#questionOverviewOverlay > button {
+  position: sticky;
+  top: 8px;
+  z-index: 1;
+  display: block;
+  margin: 0 auto;
+}
+
+#questionOverviewOverlay h1 {
+  margin: 14px 0 4px;
+  font-size: 1.8em;
+  line-height: 1.1;
+}
+
+#questionsDiv {
+  box-sizing: border-box;
+  max-width: 800px;
+  margin: 12px auto;
+  padding: 8px 16px 24px;
+  border-radius: 14px;
+}
+
+/* ---------- Phones / narrow windows: stack list above answers ---------- */
+
+@media (max-width: 800px) {
+  #quizOverviewOverlay {
+    overflow-y: auto;
+  }
+
+  .row {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .column {
+    height: auto;
+    overflow: visible;
+    padding: 12px 14px 20px;
+  }
+
+  #column1 {
+    flex: none;
+  }
+
+  #column2 {
+    flex: none;
+    min-height: 40vh;
+    border-left: none;
+    border-top: 3px solid rgba(0, 0, 0, 0.15);
+  }
+
+  #column2:empty::before {
+    margin-top: 6vh;
+  }
 }

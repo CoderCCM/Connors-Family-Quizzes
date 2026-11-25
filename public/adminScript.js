@@ -16,7 +16,7 @@ async function blah() {
     var button = document.createElement("button");
     button.innerHTML = item;
     button.onclick = function () {
-      openQuizOverview(item);
+      navigate(quizHash(item));
     };
     document.body.append(
       button,
@@ -25,6 +25,7 @@ async function blah() {
       document.createElement("BR")
     );
   });
+  route();
 }
 
 async function openQuizOverview(quizName) {
@@ -60,7 +61,9 @@ async function openQuizOverview(quizName) {
   console.log(quizzes);
 
   paintColumnOne(quizName);
-  document.getElementById("quizOverviewOverlay").style.display = "block";
+  if (parseRoute().quiz === quizName) {
+    document.getElementById("quizOverviewOverlay").style.display = "block";
+  }
 }
 var quizNameGlobal, quizDateGlobal;
 async function paintColumnOne(quizName) {
@@ -68,6 +71,9 @@ async function paintColumnOne(quizName) {
   document.getElementById("participants").innerHTML = "";
   document.getElementById("column1").style.backgroundColor = bcColor;
   document.getElementById("questionsDiv").style.backgroundColor = bcColor;
+  var detailPane = document.getElementById("column2");
+  detailPane.innerHTML = "";
+  detailPane.style.backgroundImage = "";
   var scoreArray = [];
   document.getElementById("quizName").innerHTML = quizName;
   document.getElementById("quizDate").innerHTML = ""; //quizzes[quizName].date;
@@ -120,12 +126,13 @@ async function paintColumnOne(quizName) {
           )
         );
         console.log(scoreArray);
-        p.innerHTML = item + "-------" + score + "%";
+        p.innerHTML = item + " \u2014 " + score + "%";
         p.id = indexier;
         p.onclick = function () {
           var c = document.getElementById("column2");
           c.innerHTML = "";
           c.style.backgroundImage = "url(" + bcImage + ")";
+          c.scrollIntoView({ behavior: "smooth", block: "start" });
           var h1 = document.createElement("h1");
           h1.innerHTML = item + "'s Quiz:";
           h1.style.backgroundColor = bcColor;
@@ -250,7 +257,7 @@ async function openQuestionOverview() {
 
                 h3.innerHTML =
                   findNumPeopleThatChoseOption(selections, indexer, index) +
-                  "~~~~~~~~~" +
+                  " \u2014 " +
                   choice;
                 if (index == question.correctAnswer) {
                   h3.style.backgroundColor = "lightgreen";
@@ -258,8 +265,10 @@ async function openQuestionOverview() {
                 e.append(h3);
               });
             });
-            document.getElementById("questionOverviewOverlay").style.display =
-              "block";
+            if (parseRoute().view === "questions") {
+              document.getElementById("questionOverviewOverlay").style.display =
+                "block";
+            }
 
             document.getElementById("questionOverviewOpener").style.display =
               "inline-block";
@@ -294,3 +303,78 @@ function findNumPeopleThatChoseOption(selectionsa, indexer, index) {
 function openLiveScoreboard() {
   location.assign("/scoreboard?qName=" + encodeURIComponent(quizNameGlobal));
 }
+
+
+// ---------- Browser history / back button ----------
+// The URL hash tells us which screen we're on:
+//   (none)                        quiz list
+//   #quiz=NAME                    that quiz's overview
+//   #quiz=NAME&view=questions     that quiz's question overview
+// Moving between screens pushes a history entry, so the browser's back
+// button (or a phone's back swipe) steps back one screen, and refreshing
+// the page keeps you where you were.
+var shownQuiz = null; // quiz whose overview is currently loaded
+
+function quizHash(name, view) {
+  return "#quiz=" + encodeURIComponent(name) + (view ? "&view=" + view : "");
+}
+
+function parseRoute() {
+  var params = new URLSearchParams(location.hash.replace(/^#/, ""));
+  return { quiz: params.get("quiz"), view: params.get("view") };
+}
+
+function navigate(hash) {
+  history.pushState({ app: true }, "", hash || location.pathname + location.search);
+  route();
+}
+
+function showQuestionOverview() {
+  navigate(quizHash(quizNameGlobal, "questions"));
+}
+
+// target: "list" or "overview" - where to land if there is no in-app
+// history to step back through (e.g. the page was opened from a link)
+function goBack(target) {
+  if (history.state && history.state.app) {
+    history.back();
+    return;
+  }
+  var hash = target === "overview" ? quizHash(quizNameGlobal) : "";
+  history.replaceState({}, "", hash || location.pathname + location.search);
+  route();
+}
+
+async function route() {
+  var r = parseRoute();
+  var overview = document.getElementById("quizOverviewOverlay");
+  var questionOverlay = document.getElementById("questionOverviewOverlay");
+  var opener = document.getElementById("questionOverviewOpener");
+
+  if (!r.quiz) {
+    // quiz list; forget the loaded quiz so reopening it fetches fresh data
+    shownQuiz = null;
+    overview.style.display = "none";
+    questionOverlay.style.display = "none";
+    return;
+  }
+
+  if (shownQuiz !== r.quiz) {
+    shownQuiz = r.quiz;
+    questionOverlay.style.display = "none";
+    await openQuizOverview(r.quiz);
+  } else {
+    overview.style.display = "block";
+  }
+
+  if (r.view === "questions") {
+    // a hidden opener button means the question overview is already loading
+    if (questionOverlay.style.display !== "block" && opener.style.display !== "none") {
+      openQuestionOverview();
+    }
+  } else {
+    questionOverlay.style.display = "none";
+  }
+}
+
+window.addEventListener("popstate", route);
