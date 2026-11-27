@@ -19,10 +19,26 @@
         <p class="brand">Connor&rsquo;s Family Quizzes</p>
         <h1>Quiz Creator</h1>
       </div>
-      <button type="button" class="linkbtn" id="startOver">Start over</button>
+      <div class="toplinks">
+        <button type="button" class="linkbtn" id="editQuiz">Edit a quiz</button>
+        <button type="button" class="linkbtn" id="startOver">Start over</button>
+      </div>
     </header>
 
     <main>
+      <section class="panel picker" id="picker" hidden>
+        <div class="pickerhead">
+          <h2>Choose a quiz to edit</h2>
+          <button type="button" class="linkbtn" id="pickerClose">Close</button>
+        </div>
+        <div id="pickerList"></div>
+      </section>
+
+      <div class="editbanner" id="editBanner" hidden>
+        <strong id="editTitle"></strong>
+        <p id="editWarn"></p>
+      </div>
+
       <p class="draftnote" id="draftNote" hidden>
         Picked up your unfinished draft from this device.
       </p>
@@ -38,6 +54,9 @@
               autocomplete="off"
               placeholder="2026 Thanksgiving Quiz"
             />
+            <p class="hint" id="nameHint" hidden>
+              A quiz&rsquo;s name can&rsquo;t be changed once it&rsquo;s published.
+            </p>
           </label>
         </section>
 

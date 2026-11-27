@@ -24,6 +24,13 @@ var uid = 0; // gives every question card a permanent id (numbers change when re
 var activeCard = null; // the question shown in the preview
 var draftTimer, imageTimer;
 
+// Editing an existing quiz
+var editingName = null; // name of the quiz being edited, or null when making a new one
+var editOriginal = []; // option count of each original question
+var editTakers = 0; // people who have taken it (null = couldn't find out)
+var editSnapshot = ""; // form contents when editing began, to spot unsaved changes
+var BAD_NAME_CHARS = /[.$#\[\]\/]/; // the database can't store quiz names with these
+
 function byId(id) {
   return document.getElementById(id);
 }
@@ -349,6 +356,7 @@ function isBlank(d) {
 }
 
 function saveDraft() {
+  if (editingName !== null) return; // drafts are for new quizzes only
   try {
     var d = serialize();
     if (isBlank(d)) localStorage.removeItem(DRAFT_KEY);
@@ -398,6 +406,8 @@ function collect() {
   var nameEl = byId("quizName");
   var name = nameEl.value.trim();
   if (!name) problem(nameEl, "Give the quiz a name.");
+  else if (BAD_NAME_CHARS.test(name))
+    problem(nameEl, "Quiz names can\u2019t contain . $ # [ ] or /");
 
   var colorEl = byId("backgroundColor");
   var color = normalizeColor(colorEl.value);
@@ -518,14 +528,16 @@ function showProblems(list) {
   box.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
-function showSuccess(name) {
+function showSuccess(name, edited) {
   var box = byId("result");
   box.innerHTML = "";
   var enc = encodeURIComponent(name);
   var h = document.createElement("h3");
-  h.textContent = "Published \u2713";
+  h.textContent = edited ? "Saved \u2713" : "Published \u2713";
   var p = document.createElement("p");
-  p.textContent = "\u201c" + name + "\u201d is live.";
+  p.textContent = edited
+    ? "\u201c" + name + "\u201d has been updated."
+    : "\u201c" + name + "\u201d is live.";
   var links = document.createElement("p");
   links.className = "links";
   [
@@ -537,15 +549,49 @@ function showSuccess(name) {
     a.textContent = l[0];
     links.append(a);
   });
-  var again = document.createElement("button");
-  again.type = "button";
-  again.className = "btn secondary";
-  again.textContent = "Create another quiz";
-  again.onclick = resetForm;
-  box.append(h, p, links, again);
+  var actions = document.createElement("div");
+  actions.className = "actions";
+  function action(label, handler) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn secondary";
+    b.textContent = label;
+    b.onclick = handler;
+    actions.append(b);
+  }
+  if (edited) {
+    action("Keep editing", function () {
+      box.hidden = true;
+    });
+    action("Back to a new quiz", function () {
+      exitEdit(true);
+    });
+  } else {
+    action("Create another quiz", resetForm);
+  }
+  box.append(h, p, links, actions);
   box.hidden = false;
   byId("problems").hidden = true;
   box.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function publishLabel() {
+  return editingName !== null ? "Save changes" : "Publish quiz";
+}
+
+// The quiz names the server knows about, or null if the request failed
+async function fetchQuizList() {
+  try {
+    var response = await fetch("/requestQuizList", {
+      method: "POST",
+      body: JSON.stringify({ a: "A" }),
+      headers: { "Content-Type": "application/json" },
+    });
+    var data = await response.json();
+    return Array.isArray(data.quizList) ? data.quizList.map(String) : null;
+  } catch (e) {
+    return null;
+  }
 }
 
 async function createQuiz() {
@@ -557,17 +603,43 @@ async function createQuiz() {
   hideNotices();
 
   var body = result.body;
+  var editing = editingName !== null;
   var n = body.questions.length;
-  var ok = confirm(
-    "Publish \u201c" + body.quizName + "\u201d with " + n + (n === 1 ? " question?" : " questions?")
-  );
-  if (!ok) return;
-
   var button = byId("publishBtn");
   button.disabled = true;
-  button.textContent = "Publishing\u2026";
+  button.textContent = "Checking\u2026";
+
   try {
-    var response = await fetch("/createQuiz", {
+    // a new quiz must not reuse a name (that would wipe the old quiz's results)
+    if (!editing) {
+      var existing = await fetchQuizList();
+      if (existing && existing.indexOf(body.quizName) !== -1) {
+        showProblems([
+          {
+            el: byId("quizName"),
+            msg:
+              "A quiz called \u201c" + body.quizName + "\u201d already exists. Pick another name, or use Edit a quiz to change it.",
+          },
+        ]);
+        return;
+      }
+    }
+
+    var message = editing
+      ? "Save changes to \u201c" + body.quizName + "\u201d?"
+      : "Publish \u201c" + body.quizName + "\u201d with " + n + (n === 1 ? " question?" : " questions?");
+    if (editing && editTakers !== 0) {
+      var notes = structureNotes();
+      if (notes.length) {
+        message +=
+          "\n\nHeads up: " + notes.join("; ") +
+          ". Answers people already submitted are saved by position, so their results may change.";
+      }
+    }
+    if (!confirm(message)) return;
+
+    button.textContent = editing ? "Saving\u2026" : "Publishing\u2026";
+    var response = await fetch(editing ? "/updateQuiz" : "/createQuiz", {
       method: "POST",
       body: JSON.stringify(body),
       headers: { "Content-Type": "application/json" },
@@ -592,8 +664,9 @@ async function createQuiz() {
         },
       ]);
     } else {
-      clearDraft();
-      showSuccess(body.quizName);
+      if (editing) editSnapshot = JSON.stringify(serialize());
+      else clearDraft();
+      showSuccess(body.quizName, editing);
     }
   } catch (err) {
     console.error(err);
@@ -602,7 +675,7 @@ async function createQuiz() {
     ]);
   } finally {
     button.disabled = false;
-    button.textContent = "Publish quiz";
+    button.textContent = publishLabel();
   }
 }
 
@@ -610,27 +683,231 @@ async function createQuiz() {
 /* Reset                                                               */
 /* ------------------------------------------------------------------ */
 
-function resetForm() {
+function clearForm() {
   byId("quizName").value = "";
   byId("backgroundColor").value = "";
   byId("backgroundImage").value = "";
   byId("questionsDiv").innerHTML = "";
   activeCard = null;
-  clearDraft();
   hideNotices();
   byId("draftNote").hidden = true;
-  newQuestion(null, true);
+}
+
+function refreshAll() {
   updateBcColor();
   updateImage();
   updatePreview();
+}
+
+function resetForm() {
+  clearDraft();
+  clearForm();
+  newQuestion(null, true);
+  refreshAll();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function startOver() {
+  if (editingName !== null) {
+    exitEdit();
+    return;
+  }
   if (!isBlank(serialize()) && !confirm("Clear everything and start a new quiz?")) {
     return;
   }
   resetForm();
+}
+
+/* ------------------------------------------------------------------ */
+/* Editing an existing quiz                                            */
+/* ------------------------------------------------------------------ */
+
+function isDirty() {
+  return editingName !== null && JSON.stringify(serialize()) !== editSnapshot;
+}
+
+function parseQuestion(str) {
+  var parts = String(str).split(DELIM_Q);
+  var correct = parseInt(parts[2], 10);
+  return {
+    text: parts[0] || "",
+    options: (parts[1] || "").split(DELIM_O),
+    correct: isNaN(correct) ? -1 : correct,
+  };
+}
+
+// Plain-English list of edits that would scramble answers people already gave.
+// (Answers are stored by position: "question 3, option 2".)
+function structureNotes() {
+  var notes = [];
+  var list = cards();
+  var n0 = editOriginal.length;
+  var intact =
+    list.length >= n0 &&
+    list.slice(0, n0).every(function (c, i) {
+      return c.dataset.orig === String(i);
+    });
+  if (!intact) notes.push("questions were removed or reordered");
+  else if (list.length > n0)
+    notes.push("new questions were added (people who already took it have no answer for them)");
+
+  list.forEach(function (card, i) {
+    if (card.dataset.orig === undefined) return;
+    var expected = editOriginal[Number(card.dataset.orig)];
+    var rows = optionRows(card).filter(function (row) {
+      return row.querySelector(".otext").value.trim();
+    });
+    var ok =
+      rows.length >= expected &&
+      rows.slice(0, expected).every(function (row, j) {
+        return row.dataset.orig === String(j);
+      });
+    if (!ok) notes.push("options in question " + (i + 1) + " were removed or reordered");
+  });
+  return notes;
+}
+
+function setEditUI() {
+  var editing = editingName !== null;
+  byId("quizName").readOnly = editing;
+  byId("nameHint").hidden = !editing;
+  byId("editBanner").hidden = !editing;
+  byId("startOver").textContent = editing ? "Stop editing" : "Start over";
+  byId("publishBtn").textContent = publishLabel();
+  if (!editing) return;
+
+  byId("editTitle").textContent = "Editing \u201c" + editingName + "\u201d";
+  var warn = byId("editWarn");
+  if (editTakers === 0) {
+    warn.textContent = "Nobody has taken this quiz yet, so you can change anything.";
+  } else {
+    var who =
+      editTakers === null
+        ? "Some people may have already taken this quiz"
+        : editTakers + (editTakers === 1 ? " person has" : " people have") + " already taken this quiz";
+    warn.textContent =
+      who +
+      ". Fixing typos or the background is safe. Changing a correct answer re-scores everyone, and removing or reordering questions or options would scramble their answers.";
+  }
+}
+
+function enterEdit(name, data, takers) {
+  clearForm();
+  editingName = name;
+  editTakers = takers;
+  editOriginal = [];
+  byId("quizName").value = name;
+  byId("backgroundColor").value = data.backgroundColor || "";
+  byId("backgroundImage").value = data.backgroundImage || "";
+
+  data.questions.forEach(function (str, i) {
+    var q = parseQuestion(str);
+    var card = newQuestion(q, true);
+    card.dataset.orig = i;
+    optionRows(card).forEach(function (row, j) {
+      if (j < q.options.length) row.dataset.orig = j;
+    });
+    editOriginal.push(q.options.length);
+  });
+
+  renumber();
+  setActive(cards()[0]);
+  editSnapshot = JSON.stringify(serialize());
+  setEditUI();
+  refreshAll();
+  byId("picker").hidden = true;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function exitEdit(skipConfirm) {
+  if (!skipConfirm && isDirty() && !confirm("Discard your unsaved changes?")) return;
+  clearForm();
+  editingName = null;
+  editOriginal = [];
+  editTakers = 0;
+  editSnapshot = "";
+  setEditUI();
+  // go back to whatever new quiz was in progress
+  if (loadDraft()) byId("draftNote").hidden = false;
+  else newQuestion(null, true);
+  renumber();
+  setActive(cards()[0]);
+  refreshAll();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function openPicker() {
+  var box = byId("picker");
+  var list = byId("pickerList");
+  box.hidden = false;
+  list.textContent = "Loading quizzes\u2026";
+  box.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  var names = await fetchQuizList();
+  list.textContent = "";
+  if (!names) {
+    list.textContent = "Couldn\u2019t load the quiz list. Check your connection and try again.";
+    return;
+  }
+  if (!names.length) {
+    list.textContent = "There are no quizzes to edit yet.";
+    return;
+  }
+  names.slice().reverse().forEach(function (name) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "pick";
+    b.textContent = name;
+    b.onclick = function () {
+      loadQuizForEdit(name);
+    };
+    list.append(b);
+  });
+}
+
+async function loadQuizForEdit(name) {
+  if (
+    editingName !== null &&
+    isDirty() &&
+    !confirm("Discard your unsaved changes to \u201c" + editingName + "\u201d?")
+  ) {
+    return;
+  }
+  var buttons = Array.prototype.slice.call(byId("pickerList").querySelectorAll("button"));
+  function setBusy(busy) {
+    buttons.forEach(function (b) {
+      b.disabled = busy;
+    });
+  }
+  setBusy(true);
+  try {
+    var response = await fetch("/requestQuestions", {
+      method: "POST",
+      body: JSON.stringify({ quizName: name }),
+      headers: { "Content-Type": "application/json" },
+    });
+    var data = await response.json();
+    if (!data || !Array.isArray(data.questions) || !data.questions.length) {
+      throw new Error("That quiz has no questions to edit.");
+    }
+    var takers = null;
+    try {
+      var pr = await fetch("/requestParticipantListByQuizName", {
+        method: "POST",
+        body: JSON.stringify({ quizName: name }),
+        headers: { "Content-Type": "application/json" },
+      });
+      var pd = await pr.json();
+      if (Array.isArray(pd.participants)) takers = pd.participants.length;
+    } catch (e) {}
+
+    if (editingName === null) saveDraft(); // keep an unfinished new quiz for later
+    enterEdit(name, data, takers);
+  } catch (err) {
+    console.error(err);
+    alert("Couldn\u2019t load that quiz. Please try again.");
+    setBusy(false);
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -733,6 +1010,19 @@ function init() {
   });
   byId("publishBtn").addEventListener("click", createQuiz);
   byId("startOver").addEventListener("click", startOver);
+  byId("editQuiz").addEventListener("click", function () {
+    if (byId("picker").hidden) openPicker();
+    else byId("picker").hidden = true;
+  });
+  byId("pickerClose").addEventListener("click", function () {
+    byId("picker").hidden = true;
+  });
+  window.addEventListener("beforeunload", function (e) {
+    if (isDirty()) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+  });
 
   if (loadDraft()) {
     byId("draftNote").hidden = false;
