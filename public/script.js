@@ -219,10 +219,15 @@ async function openScorePage(quizName) {
 }
 
 // A usable name is a non-blank string that isn't a leftover "null"/"undefined"
+// Names become part of database paths, which can't contain . $ # [ ] /
+var BAD_NAME_CHARS = /[.$#\[\]\/]/;
+
 function isValidName(name) {
   if (typeof name !== "string") return false;
   var n = name.trim().toLowerCase();
-  return n !== "" && n !== "null" && n !== "undefined";
+  return (
+    n !== "" && n !== "null" && n !== "undefined" && !BAD_NAME_CHARS.test(n)
+  );
 }
 
 // The name saved on this device, or null (junk values are cleared)
@@ -236,10 +241,12 @@ function getSavedName() {
 // Returns a valid name, or null if the person cancels (or prompts are blocked)
 function promptForName() {
   for (var attempt = 0; attempt < 5; attempt++) {
-    var entered = prompt(
-      "What is your name?\nNOTE: This cannot be changed, please enter your real name."
-    );
+    var entered = prompt("What is your name?");
     if (typeof entered !== "string") return null;
+    if (BAD_NAME_CHARS.test(entered)) {
+      alert("Names can't contain any of these characters:  .  $  #  [  ]  /");
+      continue;
+    }
     if (isValidName(entered)) return entered.trim();
   }
   return null;

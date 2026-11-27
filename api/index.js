@@ -70,6 +70,56 @@ function requirePassword(environmentVariable) {
   };
 }
 
+// =======================
+// Quiz payload validation (used by /createQuiz and /updateQuiz)
+// =======================
+
+const PROP_DELIM = "!@#$%^&*()";
+const OPTION_DELIM = "{}|";
+// Firebase paths can't contain these, and quiz names become part of paths
+const BAD_PATH_CHARS = /[.$#\[\]\/]/;
+
+// A stored question looks like:  text !@#$%^&*() opt1 {}| opt2 ... !@#$%^&*() correctIndex
+function questionIsWellFormed(q) {
+  if (typeof q !== "string") return false;
+  const parts = q.split(PROP_DELIM);
+  if (parts.length !== 3 || !parts[0].trim()) return false;
+  const options = parts[1].split(OPTION_DELIM);
+  const correct = Number(parts[2]);
+  return (
+    options.length >= 2 &&
+    options.every((o) => o.trim()) &&
+    Number.isInteger(correct) &&
+    correct >= 0 &&
+    correct < options.length
+  );
+}
+
+// Returns an error message, or null if the payload is fine
+function validateQuizPayload(body) {
+  const { quizName, backgroundColor, backgroundImage, questions } = body || {};
+  if (typeof quizName !== "string" || !quizName.trim()) {
+    return "quizName is required";
+  }
+  if (BAD_PATH_CHARS.test(quizName)) {
+    return "quizName can't contain . $ # [ ] or /";
+  }
+  if (typeof backgroundColor !== "string" || typeof backgroundImage !== "string") {
+    return "backgroundColor and backgroundImage must be strings";
+  }
+  if (backgroundColor.includes(PROP_DELIM) || backgroundImage.includes(PROP_DELIM)) {
+    return "backgroundColor and backgroundImage can't contain " + PROP_DELIM;
+  }
+  if (!Array.isArray(questions) || questions.length === 0) {
+    return "questions must be a non-empty list";
+  }
+  const badIndex = questions.findIndex((q) => !questionIsWellFormed(q));
+  if (badIndex !== -1) {
+    return `question ${badIndex + 1} is malformed`;
+  }
+  return null;
+}
+
 // Serve static files
 app.use(express.static(path.join(__dirname, "../public")));
 
@@ -152,6 +202,13 @@ app.post("/submitChoicesByName", jsonParser, async (req, res) => {
       return res.status(400).json({ error: "participantName is required" });
     }
 
+    // names become part of database paths, which can't contain these
+    if (BAD_PATH_CHARS.test(normalizedParticipantName)) {
+      return res
+        .status(400)
+        .json({ error: "participantName can't contain . $ # [ ] or /" });
+    }
+
     await db
       .ref(`${quizName} - ${normalizedParticipantName} - Choices`)
       .set(choices);
@@ -200,6 +257,12 @@ app.post("/requestIfNameAlreadyExists", jsonParser, async (req, res) => {
   try {
     const { quiz, participantName } = req.body;
 
+    if (typeof participantName === "string" && BAD_PATH_CHARS.test(participantName)) {
+      return res
+        .status(400)
+        .json({ error: "participantName can't contain . $ # [ ] or /" });
+    }
+
     const snapshot = await db
       .ref(`${quiz} - QuizTakers`)
       .once("value");
@@ -215,7 +278,21 @@ app.post("/requestIfNameAlreadyExists", jsonParser, async (req, res) => {
 
 app.post("/createQuiz", jsonParser, requirePassword("QUIZ_CREATOR_PASSWORD"), async (req, res) => {
   try {
+    const problem = validateQuizPayload(req.body);
+    if (problem) {
+      return res.status(400).json({ error: problem });
+    }
     const { quizName, backgroundColor, backgroundImage, questions } = req.body;
+
+    const snapshot = await db.ref("quizList").once("value");
+    let list = snapshot.val() || [];
+
+    // creating over an existing quiz would wipe its list of quiz takers
+    if (list.includes(quizName)) {
+      return res
+        .status(409)
+        .json({ error: "A quiz with that name already exists" });
+    }
 
     await Promise.all([
       db
@@ -229,9 +306,6 @@ app.post("/createQuiz", jsonParser, requirePassword("QUIZ_CREATOR_PASSWORD"), as
         .set(["Q!W@E#R$T%Y^U&I*O(P)"]),
     ]);
 
-    const snapshot = await db.ref("quizList").once("value");
-    let list = snapshot.val() || [];
-
     list.push(quizName);
 
     await db.ref("quizList").set(list);
@@ -239,6 +313,39 @@ app.post("/createQuiz", jsonParser, requirePassword("QUIZ_CREATOR_PASSWORD"), as
     res.json({ success: true });
   } catch (err) {
     console.error("createQuiz error:", err);
+    res.status(500).send("Internal error");
+  }
+});
+
+// Edit an existing quiz's questions and look. The name can't change (it is
+// part of every database path), and the list of quiz takers and their saved
+// choices are left alone.
+app.post("/updateQuiz", jsonParser, requirePassword("QUIZ_CREATOR_PASSWORD"), async (req, res) => {
+  try {
+    const problem = validateQuizPayload(req.body);
+    if (problem) {
+      return res.status(400).json({ error: problem });
+    }
+    const { quizName, backgroundColor, backgroundImage, questions } = req.body;
+
+    const snapshot = await db.ref("quizList").once("value");
+    const list = snapshot.val() || [];
+
+    if (!list.includes(quizName)) {
+      return res.status(404).json({ error: "No quiz with that name" });
+    }
+
+    await Promise.all([
+      db
+        .ref(`${quizName} - Properties`)
+        .set(`${backgroundColor}!@#$%^&*()${backgroundImage}`),
+
+      db.ref(`${quizName} - Questions`).set(questions),
+    ]);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("updateQuiz error:", err);
     res.status(500).send("Internal error");
   }
 });
