@@ -220,13 +220,16 @@ async function openScorePage(quizName) {
 
 // A usable name is a non-blank string that isn't a leftover "null"/"undefined"
 // Names become part of database paths, which can't contain . $ # [ ] /
-var BAD_NAME_CHARS = /[.$#\[\]\/]/;
+// (a function, not a var, because blah() runs before the rest of the file does)
+function hasBadNameChars(name) {
+  return /[.$#\[\]\/]/.test(name);
+}
 
 function isValidName(name) {
   if (typeof name !== "string") return false;
   var n = name.trim().toLowerCase();
   return (
-    n !== "" && n !== "null" && n !== "undefined" && !BAD_NAME_CHARS.test(n)
+    n !== "" && n !== "null" && n !== "undefined" && !hasBadNameChars(n)
   );
 }
 
@@ -243,7 +246,7 @@ function promptForName() {
   for (var attempt = 0; attempt < 5; attempt++) {
     var entered = prompt("What is your name?");
     if (typeof entered !== "string") return null;
-    if (BAD_NAME_CHARS.test(entered)) {
+    if (hasBadNameChars(entered)) {
       alert("Names can't contain any of these characters:  .  $  #  [  ]  /");
       continue;
     }
